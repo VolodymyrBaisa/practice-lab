@@ -1,13 +1,13 @@
 # Practice Lab
 
+**Created by Claude** — built with [Claude Code](https://claude.com/claude-code).
+
 Small single-page tools for the maths and mechanics behind game code. Each one lets you
 write the answer yourself, draws what you wrote, and tells you when it only works by accident.
 
 Published with GitHub Pages at <https://volodymyrbaisa.github.io/practice-lab/>. The root
 page builds its menu and cards from the practice folders — adding a folder is the only
 step needed to make a new practice appear.
-
-Built by Volodymyr Baisa with [Claude Code](https://claude.com/claude-code).
 
 ## Adding a practice
 
