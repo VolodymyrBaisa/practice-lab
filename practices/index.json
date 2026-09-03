@@ -1,5 +1,19 @@
 [
   {
+    "id": "normalize-bench",
+    "menu": "Normalize",
+    "title": "Normalize Bench",
+    "summary": "Drag a vector's tip around a grid and watch its normalized copy stay pinned to the unit circle while the raw x, y and length keep changing.",
+    "why": "Normalizing looks like it throws information away. Seeing the ratio between x and y hold perfectly steady while the length varies is what makes it land that direction and distance are two separate facts stored in the same three numbers.",
+    "topics": [
+      "vectors",
+      "maths"
+    ],
+    "engine": "",
+    "added": "2026-09-03",
+    "href": "practices/normalize-bench/index.html"
+  },
+  {
     "id": "snake-vector-bench",
     "menu": "Snake vectors",
     "title": "Snake Vector Bench",

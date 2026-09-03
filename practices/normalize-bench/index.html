@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Normalize Bench</title>
+<meta name="description" content="Drag a vector's tip and watch its normalized copy stay pinned to the unit circle while the raw numbers change.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#F1F4F1; --surface:#FFFFFF; --sunk:#E8ECE8;
+  --ink:#141E1B; --ink-2:#4E5B57; --ink-3:#7E8A85;
+  --line:#D4DBD6; --line-2:#B6C0BA;
+  --accent:#0B7A5E; --accent-soft:#DAEFE7; --accent-ink:#075243;
+  --warn:#8A6A12; --warn-soft:#F5EBD3;
+  --grid:#E3E8E3; --grid-2:#CFD8D1;
+  --dot:#5F6D68;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0F1617; --surface:#18211F; --sunk:#131B1A;
+    --ink:#E5ECE8; --ink-2:#A2AFAA; --ink-3:#7A8681;
+    --line:#283432; --line-2:#3A4744;
+    --accent:#45D3A5; --accent-soft:#10312A; --accent-ink:#8DE8C6;
+    --warn:#D9AE55; --warn-soft:#2E2716;
+    --grid:#1D2726; --grid-2:#2B3937;
+    --dot:#93A19C;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0F1617; --surface:#18211F; --sunk:#131B1A;
+  --ink:#E5ECE8; --ink-2:#A2AFAA; --ink-3:#7A8681;
+  --line:#283432; --line-2:#3A4744;
+  --accent:#45D3A5; --accent-soft:#10312A; --accent-ink:#8DE8C6;
+  --warn:#D9AE55; --warn-soft:#2E2716;
+  --grid:#1D2726; --grid-2:#2B3937;
+  --dot:#93A19C;
+}
+*{box-sizing:border-box}
+html{color-scheme:light dark}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  font-size:15px;line-height:1.6;
+}
+.crumb{max-width:1140px;margin:0 auto;padding:20px 22px 0;font-size:13px}
+.crumb a{color:var(--ink-3);text-decoration:none;font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:11px}
+.crumb a:hover{color:var(--accent)}
+a:focus-visible,button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.bench{max-width:1140px;margin:0 auto;padding:10px 22px 72px}
+.eyebrow{
+  font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;
+  font-weight:500;text-transform:uppercase;letter-spacing:.12em;
+  font-size:12px;color:var(--ink-3);margin:0 0 8px;
+}
+h1{font-size:30px;font-weight:500;letter-spacing:-.015em;margin:0 0 10px;text-wrap:balance}
+.lede{margin:0 0 28px;color:var(--ink-2);max-width:62ch}
+.lab{display:grid;grid-template-columns:minmax(0,520px) minmax(0,1fr);gap:26px;align-items:start}
+@media (max-width:920px){.lab{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.graph{position:sticky;top:18px}
+@media (max-width:920px){.graph{position:static}}
+svg.plot{display:block;width:100%;height:auto;touch-action:none;user-select:none}
+.plot .grab{cursor:grab}
+.plot .grab:active{cursor:grabbing}
+.presets{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.presets .k{font-family:"IBM Plex Sans Condensed",sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:11px;color:var(--ink-3);margin-right:2px}
+button{
+  font:inherit;font-size:13px;padding:6px 12px;border-radius:7px;
+  border:1px solid var(--line-2);background:var(--surface);color:var(--ink);cursor:pointer;
+  font-family:"IBM Plex Mono",monospace;
+}
+button:hover{border-color:var(--ink-3)}
+.stack{display:flex;flex-direction:column;gap:14px}
+.card h2{font-size:15px;font-weight:500;margin:0 0 4px}
+.card .sub{margin:0 0 14px;color:var(--ink-2);font-size:13px}
+dl.rows{display:grid;grid-template-columns:auto 1fr;gap:9px 16px;margin:0;align-items:baseline}
+dl.rows dt{
+  font-family:"IBM Plex Sans Condensed",sans-serif;text-transform:uppercase;
+  letter-spacing:.1em;font-size:11px;color:var(--ink-3);white-space:nowrap;
+}
+dl.rows dd{
+  margin:0;font-family:"IBM Plex Mono",monospace;font-size:14px;
+  font-variant-numeric:tabular-nums;color:var(--ink);
+}
+dl.rows dd.lit{color:var(--accent)}
+.ratio{margin-top:16px;padding:13px 14px;border-radius:8px;background:var(--sunk)}
+.ratio p{margin:0 0 8px;font-size:12px;color:var(--ink-3);font-family:"IBM Plex Sans Condensed",sans-serif;text-transform:uppercase;letter-spacing:.1em}
+.ratio dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}
+.ratio dt{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink-2)}
+.ratio dd{margin:0;font-family:"IBM Plex Mono",monospace;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.note{margin:14px 0 0;font-size:13px;color:var(--ink-2)}
+.note.zero{padding:11px 13px;border-radius:8px;background:var(--warn-soft);color:var(--warn)}
+.scale-row{display:flex;align-items:center;gap:12px;margin-top:4px}
+.scale-row label{font-family:"IBM Plex Sans Condensed",sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:11px;color:var(--ink-3);white-space:nowrap}
+input[type=range]{flex:1;min-width:110px;accent-color:var(--accent)}
+.scale-out{margin:12px 0 0;font-size:14px;color:var(--ink-2)}
+.scale-out b{font-weight:500;color:var(--ink);font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-3)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:11px;height:11px;border-radius:50%;display:inline-block}
+</style>
+</head>
+<body>
+<p class="crumb"><a href="../../index.html">&larr; Practice lab</a></p>
+
+<div class="bench">
+  <p class="eyebrow">Vectors</p>
+  <h1>Normalize Bench</h1>
+  <p class="lede">Drag the grey dot anywhere. The teal dot is the same vector after normalizing, and it can never leave the circle. Watch which numbers change as you drag, and which one refuses to.</p>
+
+  <div class="lab">
+    <section class="panel graph" aria-label="Vector plot">
+      <svg class="plot" viewBox="0 0 560 560" role="img" aria-label="A grid with the origin at the centre, a draggable vector tip, and its normalized copy on the unit circle">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+          </marker>
+        </defs>
+        <g id="grid"></g>
+        <line x1="30" y1="280" x2="530" y2="280" stroke="var(--grid-2)" stroke-width="1"></line>
+        <line x1="280" y1="30" x2="280" y2="530" stroke="var(--grid-2)" stroke-width="1"></line>
+        <text x="524" y="298" fill="var(--ink-3)" font-size="12" font-family="IBM Plex Mono, monospace" text-anchor="end">x</text>
+        <text x="290" y="42" fill="var(--ink-3)" font-size="12" font-family="IBM Plex Mono, monospace">y</text>
+        <circle cx="280" cy="280" r="50" fill="none" stroke="var(--accent)" stroke-width="1" stroke-dasharray="3 4" opacity=".65"></circle>
+        <line id="ray" stroke="var(--line-2)" stroke-width="1" stroke-dasharray="2 5"></line>
+        <line id="vecLine" stroke="var(--dot)" stroke-width="2" marker-end="url(#ah)"></line>
+        <line id="scaleLine" stroke="var(--accent)" stroke-width="1.5" opacity=".45"></line>
+        <circle id="scaleDot" r="5" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity=".7"></circle>
+        <circle id="unitDot" r="7" fill="var(--accent)"></circle>
+        <circle id="tip" class="grab" r="10" fill="var(--surface)" stroke="var(--dot)" stroke-width="2.5" tabindex="0" role="slider" aria-label="Vector tip. Use the arrow keys to move it."></circle>
+        <text id="tipLabel" font-size="12" font-family="IBM Plex Mono, monospace" fill="var(--ink-2)"></text>
+        <text id="unitLabel" font-size="12" font-family="IBM Plex Mono, monospace" fill="var(--accent)"></text>
+      </svg>
+
+      <div class="presets">
+        <span class="k">Same direction</span>
+        <button type="button" data-v="3,4">(3, 4)</button>
+        <button type="button" data-v="1.5,2">(1.5, 2)</button>
+        <button type="button" data-v="0.6,0.8">(0.6, 0.8)</button>
+        <button type="button" data-v="0,0">(0, 0)</button>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--dot)"></i>your vector</span>
+        <span><i style="background:var(--accent)"></i>normalized</span>
+        <span>dashed circle = length 1</span>
+      </div>
+    </section>
+
+    <div class="stack">
+      <section class="panel card" aria-label="The numbers">
+        <h2>The numbers</h2>
+        <p class="sub">Drag the dot and watch the bottom row hold still.</p>
+        <dl class="rows">
+          <dt>v</dt><dd id="oV"></dd>
+          <dt>length</dt><dd id="oLen"></dd>
+          <dt>v ÷ length</dt><dd class="lit" id="oDir"></dd>
+          <dt>its length</dt><dd class="lit" id="oDirLen"></dd>
+          <dt>angle</dt><dd id="oAng"></dd>
+        </dl>
+
+        <div class="ratio">
+          <p>The ratio is the direction</p>
+          <dl>
+            <dt>x ÷ y of v</dt><dd id="oR1"></dd>
+            <dt>x ÷ y of v ÷ length</dt><dd id="oR2"></dd>
+          </dl>
+        </div>
+        <p class="note" id="oNote"></p>
+      </section>
+
+      <section class="panel card" aria-label="Scaling the unit vector">
+        <h2>Why length 1 is worth having</h2>
+        <p class="sub">Multiply the teal vector by any number and you travel exactly that far.</p>
+        <div class="scale-row">
+          <label for="scale">Multiply by</label>
+          <input type="range" id="scale" min="0" max="5" step="0.1" value="2.5">
+        </div>
+        <p class="scale-out" id="oScale"></p>
+        <p class="note">Try the same multiplication on <code>v</code> instead. At length 5 it lands five times too far — which is the whole reason the divide has to come first.</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var SVGNS="http://www.w3.org/2000/svg";
+var O=280, U=50, LIM=4.8;
+
+function sx(x){ return O + x*U; }
+function sy(y){ return O - y*U; }
+function snap(n){ return Math.round(n*10)/10; }
+function clamp(n){ return Math.max(-LIM,Math.min(LIM,n)); }
+function f2(n){ var r=Math.round(n*100)/100; if(Object.is(r,-0)) r=0; return r.toFixed(2); }
+
+var state={ x:3, y:4, scale:2.5 };
+
+var grid=document.getElementById("grid");
+for(var i=-5;i<=5;i++){
+  if(i===0) continue;
+  var p=O+i*U;
+  var a=document.createElementNS(SVGNS,"line");
+  a.setAttribute("x1",p); a.setAttribute("y1",30); a.setAttribute("x2",p); a.setAttribute("y2",530);
+  a.setAttribute("stroke","var(--grid)"); a.setAttribute("stroke-width","1");
+  grid.appendChild(a);
+  var b=document.createElementNS(SVGNS,"line");
+  b.setAttribute("x1",30); b.setAttribute("y1",p); b.setAttribute("x2",530); b.setAttribute("y2",p);
+  b.setAttribute("stroke","var(--grid)"); b.setAttribute("stroke-width","1");
+  grid.appendChild(b);
+}
+
+var ray=document.getElementById("ray"), vecLine=document.getElementById("vecLine");
+var scaleLine=document.getElementById("scaleLine"), scaleDot=document.getElementById("scaleDot");
+var unitDot=document.getElementById("unitDot"), tip=document.getElementById("tip");
+var tipLabel=document.getElementById("tipLabel"), unitLabel=document.getElementById("unitLabel");
+
+function set(el,attrs){ for(var k in attrs){ if(Object.prototype.hasOwnProperty.call(attrs,k)) el.setAttribute(k,attrs[k]); } }
+function txt(id,s){ document.getElementById(id).textContent=s; }
+
+function render(){
+  var x=state.x, y=state.y;
+  var len=Math.sqrt(x*x+y*y);
+  var zero=len<1e-9;
+  var nx=zero?0:x/len, ny=zero?0:y/len;
+
+  set(tip,{cx:sx(x),cy:sy(y)});
+  set(vecLine,{x1:sx(0),y1:sy(0),x2:sx(x),y2:sy(y)});
+  vecLine.style.display=zero?"none":"";
+
+  if(zero){
+    ray.style.display="none"; unitDot.style.display="none";
+    scaleLine.style.display="none"; scaleDot.style.display="none";
+    unitLabel.textContent="";
+  }else{
+    ray.style.display=""; unitDot.style.display="";
+    scaleLine.style.display=""; scaleDot.style.display="";
+    set(ray,{x1:sx(-nx*9),y1:sy(-ny*9),x2:sx(nx*9),y2:sy(ny*9)});
+    set(unitDot,{cx:sx(nx),cy:sy(ny)});
+    set(scaleLine,{x1:sx(0),y1:sy(0),x2:sx(nx*state.scale),y2:sy(ny*state.scale)});
+    set(scaleDot,{cx:sx(nx*state.scale),cy:sy(ny*state.scale)});
+    set(unitLabel,{x:sx(nx)+13,y:sy(ny)-9});
+    unitLabel.textContent="("+f2(nx)+", "+f2(ny)+")";
+  }
+
+  set(tipLabel,{x:sx(x)+15,y:sy(y)+5});
+  tipLabel.textContent="("+f2(x)+", "+f2(y)+")";
+  tip.setAttribute("aria-valuetext",f2(x)+", "+f2(y));
+
+  txt("oV","("+f2(x)+", "+f2(y)+")");
+  txt("oLen",f2(len));
+  txt("oDir",zero?"(0.00, 0.00)":"("+f2(nx)+", "+f2(ny)+")");
+  txt("oDirLen",zero?"0.00":f2(Math.sqrt(nx*nx+ny*ny)));
+  var ang=zero?0:Math.atan2(y,x)*180/Math.PI;
+  if(ang<0) ang+=360;
+  txt("oAng",zero?"—":f2(ang)+"°");
+
+  var r1=(Math.abs(y)<1e-9)?"—":f2(x/y);
+  var r2=(zero||Math.abs(ny)<1e-9)?"—":f2(nx/ny);
+  txt("oR1",r1); txt("oR2",r2);
+
+  var note=document.getElementById("oNote");
+  if(zero){
+    note.className="note zero";
+    note.textContent="Length 0 has no direction to find. GetSafeNormal2D returns a zero vector here instead of dividing by zero — that is the “safe” in the name.";
+  }else{
+    note.className="note";
+    note.textContent="Drag along the same dashed ray: v and its length both change, the teal numbers do not.";
+  }
+
+  txt("oScale", zero ? "Nothing to scale — the vector has no direction."
+    : "dir × " + f2(state.scale) + " lands " + f2(state.scale) + " units from the origin, every time.");
+}
+
+var svg=document.querySelector("svg.plot"), dragging=false;
+function toV(evt){
+  var r=svg.getBoundingClientRect();
+  var px=(evt.clientX-r.left)*(560/r.width), py=(evt.clientY-r.top)*(560/r.height);
+  return { x:clamp(snap((px-O)/U)), y:clamp(snap((O-py)/U)) };
+}
+tip.addEventListener("pointerdown",function(evt){
+  dragging=true;
+  if(svg.setPointerCapture) svg.setPointerCapture(evt.pointerId);
+  evt.preventDefault();
+});
+svg.addEventListener("pointermove",function(evt){
+  if(!dragging) return;
+  var v=toV(evt); state.x=v.x; state.y=v.y; render();
+});
+svg.addEventListener("pointerup",function(){ dragging=false; });
+svg.addEventListener("pointercancel",function(){ dragging=false; });
+
+tip.addEventListener("keydown",function(evt){
+  var s=evt.shiftKey?1:0.1, used=true;
+  if(evt.key==="ArrowRight") state.x=clamp(snap(state.x+s));
+  else if(evt.key==="ArrowLeft") state.x=clamp(snap(state.x-s));
+  else if(evt.key==="ArrowUp") state.y=clamp(snap(state.y+s));
+  else if(evt.key==="ArrowDown") state.y=clamp(snap(state.y-s));
+  else used=false;
+  if(used){ evt.preventDefault(); render(); }
+});
+
+Array.prototype.forEach.call(document.querySelectorAll(".presets button"),function(b){
+  b.addEventListener("click",function(){
+    var p=b.getAttribute("data-v").split(",");
+    state.x=parseFloat(p[0]); state.y=parseFloat(p[1]); render();
+  });
+});
+
+document.getElementById("scale").addEventListener("input",function(){
+  state.scale=parseFloat(this.value); render();
+});
+
+render();
+})();
+</script>
+</body>
+</html>
