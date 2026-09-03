@@ -27,8 +27,7 @@
     var a = el("a");
     a.href = p.href;
     if (i === 0) a.setAttribute("data-new", "true");
-    a.appendChild(el("span", null, p.menu));
-    if (p.engine) a.appendChild(el("span", "tag", p.engine));
+    a.textContent = p.menu;
     li.appendChild(a);
     nav.appendChild(li);
 

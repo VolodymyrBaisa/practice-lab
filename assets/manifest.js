@@ -10,7 +10,6 @@ window.PRACTICES = [
       "vectors",
       "maths"
     ],
-    "engine": "",
     "added": "2026-09-03",
     "href": "practices/normalize-bench/index.html"
   },
@@ -25,7 +24,6 @@ window.PRACTICES = [
       "unreal",
       "c++"
     ],
-    "engine": "Unreal Engine 5.8",
     "added": "2026-09-03",
     "href": "practices/snake-vector-bench/index.html"
   }

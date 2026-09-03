@@ -31,7 +31,6 @@ practices/
   "summary": "One or two sentences on what you actually do on the page.",
   "why": "The mistake or confusion this exists to fix. Be specific about the failure.",
   "topics": ["vectors", "unreal"],
-  "engine": "Unreal Engine 5.8",
   "added": "2026-09-03",
   "entry": "index.html"
 }
@@ -44,8 +43,7 @@ practices/
 | `title`   | yes      | Card heading and the page's own `<title>`.                      |
 | `summary` | yes      | What you do on the page.                                        |
 | `why`     | yes      | Why it exists — the specific mistake it targets.                |
-| `topics`  | no       | Tags shown on the card.                                         |
-| `engine`  | no       | Shown under the sidebar label.                                  |
+| `topics`  | no       | Tags shown on the card. Name the concept, not an engine release.|
 | `added`   | yes      | `YYYY-MM-DD`. Cards sort newest first; the newest is featured.  |
 | `entry`   | no       | Defaults to `index.html`.                                       |
 

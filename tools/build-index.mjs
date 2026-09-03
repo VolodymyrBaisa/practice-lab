@@ -65,7 +65,6 @@ for (const entry of entries) {
     summary: meta.summary,
     why: meta.why,
     topics: Array.isArray(meta.topics) ? meta.topics : [],
-    engine: meta.engine || "",
     added: meta.added,
     href: `practices/${meta.id}/${entryFile}`,
   });

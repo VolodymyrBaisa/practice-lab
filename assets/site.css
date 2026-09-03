@@ -48,7 +48,6 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
 }
 .side nav a:hover{background:var(--sunk);text-decoration:none}
 .side nav a[data-new=true]{border-left-color:var(--accent)}
-.side nav .tag{display:block;font-size:11px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace}
 .side .count{margin:18px 0 0;font-size:12px;color:var(--ink-3)}
 
 .masthead{margin:0 0 30px}
