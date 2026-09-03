@@ -448,7 +448,7 @@ var STEPS=[
 var state={
   leader:{x:400,y:500}, follower:{x:100,y:100}, spacing:100,
   active:"s1", scratchMode:"point",
-  running:false, speed:5, facing:53.13, lastT:0
+  running:false, speed:5, facing:0, lastT:0
 };
 
 function near(a,b){
@@ -594,14 +594,11 @@ function activeValue(){
   if(state.active==="e0") return {kind:state.scratchMode==="point"?"point":"offset",val:evalInput("e0",ALL)};
   return {kind:"point",val:null};
 }
-function canonYaw(){
-  var d=fullEnv(state.leader,state.follower,state.spacing).dir;
-  var a=Math.atan2(d.y,d.x)*180/Math.PI;
-  return a<0?a+360:a;
-}
-function wantedYaw(){
+// Null until the facing step is solved. Nothing rotates the segment until you
+// have written the expression that says which way it should point.
+function solvedYaw(){
   var v=evalInput("e4",STEPS[3].allow);
-  return (v&&v.t==="n")?v.v:canonYaw();
+  return (v&&v.t==="n")?v.v:null;
 }
 
 function render(deep){
@@ -665,7 +662,9 @@ function startRun(){
   state.lastT=performance.now();
   runBtn.textContent="Stop";
   runBtn.setAttribute("aria-pressed","true");
-  runHint.textContent="Running. Drag the leader — the follower is chasing your target expression.";
+  runHint.textContent = (solvedYaw()===null)
+    ? "Running. Drag the leader — the follower chases, but its nose stays put until you solve facing."
+    : "Running. Position from your target expression, rotation from your facing expression.";
   raf=requestAnimationFrame(step);
 }
 function step(now){
@@ -677,8 +676,11 @@ function step(now){
   if(T&&T.t==="v"){
     state.follower={x:state.follower.x+(T.x-state.follower.x)*k, y:state.follower.y+(T.y-state.follower.y)*k};
   }
-  var diff=((wantedYaw()-state.facing+540)%360)-180;
-  state.facing=(state.facing+diff*k+360)%360;
+  var wy=solvedYaw();
+  if(wy!==null){
+    var diff=((wy-state.facing+540)%360)-180;
+    state.facing=(state.facing+diff*k+360)%360;
+  }
   render(false);
   raf=requestAnimationFrame(step);
 }
