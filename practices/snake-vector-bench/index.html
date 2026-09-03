@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Practice the vector maths behind snake segment following: type each step, see it drawn, get it checked at random positions."><title>Snake Vector Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#F1F4F1; --surface:#FFFFFF; --sunk:#E8ECE8;
+  --ink:#141E1B; --ink-2:#4E5B57; --ink-3:#7E8A85;
+  --line:#D4DBD6; --line-2:#B6C0BA;
+  --accent:#0B7A5E; --accent-soft:#DAEFE7; --accent-ink:#075243;
+  --bad:#A8422A; --bad-soft:#F6E5DF; --bad-ink:#7A2E1B;
+  --warn:#8A6A12; --warn-soft:#F5EBD3;
+  --grid:#E3E8E3; --grid-2:#CFD8D1;
+  --dot:#5F6D68;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0F1617; --surface:#18211F; --sunk:#131B1A;
+    --ink:#E5ECE8; --ink-2:#A2AFAA; --ink-3:#7A8681;
+    --line:#283432; --line-2:#3A4744;
+    --accent:#45D3A5; --accent-soft:#10312A; --accent-ink:#8DE8C6;
+    --bad:#E58060; --bad-soft:#33201A; --bad-ink:#F0A88F;
+    --warn:#D9AE55; --warn-soft:#2E2716;
+    --grid:#1D2726; --grid-2:#2B3937;
+    --dot:#93A19C;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0F1617; --surface:#18211F; --sunk:#131B1A;
+  --ink:#E5ECE8; --ink-2:#A2AFAA; --ink-3:#7A8681;
+  --line:#283432; --line-2:#3A4744;
+  --accent:#45D3A5; --accent-soft:#10312A; --accent-ink:#8DE8C6;
+  --bad:#E58060; --bad-soft:#33201A; --bad-ink:#F0A88F;
+  --warn:#D9AE55; --warn-soft:#2E2716;
+  --grid:#1D2726; --grid-2:#2B3937;
+  --dot:#93A19C;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);margin:0}
+.bench{
+  font-family:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  color:var(--ink);background:var(--ground);
+  max-width:1140px;margin:0 auto;padding:34px 22px 72px;
+  font-size:15px;line-height:1.6;
+}
+.eyebrow{
+  font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;
+  font-weight:500;text-transform:uppercase;letter-spacing:.12em;
+  font-size:12px;color:var(--ink-3);margin:0 0 8px;
+}
+h1{font-size:30px;font-weight:500;letter-spacing:-.015em;margin:0 0 10px;text-wrap:balance}
+.lede{margin:0 0 30px;color:var(--ink-2);max-width:62ch}
+.lab{display:grid;grid-template-columns:minmax(0,500px) minmax(0,1fr);gap:26px;align-items:start}
+@media (max-width:920px){.lab{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.viewport{position:sticky;top:18px;padding:16px 16px 14px}
+@media (max-width:920px){.viewport{position:static}}
+svg.plot{display:block;width:100%;height:auto;touch-action:none;user-select:none}
+.plot circle.handle{cursor:grab}
+.plot circle.handle:active{cursor:grabbing}
+.readout{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.readout div{display:flex;gap:7px;align-items:baseline}
+.readout .k{font-family:"IBM Plex Sans Condensed",sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:11px;color:var(--ink-3)}
+.readout .v{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.controls{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
+.controls label{font-family:"IBM Plex Sans Condensed",sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:11px;color:var(--ink-3)}
+input[type=range]{flex:1;min-width:120px;accent-color:var(--accent)}
+button{
+  font:inherit;font-size:13px;padding:6px 13px;border-radius:7px;
+  border:1px solid var(--line-2);background:var(--surface);color:var(--ink);cursor:pointer;
+}
+button:hover{border-color:var(--ink-3)}
+button[disabled]{opacity:.45;cursor:not-allowed}
+button[disabled]:hover{border-color:var(--line-2)}
+button[aria-pressed=true]#run{background:var(--accent-soft);color:var(--accent-ink);border-color:var(--accent)}
+.hint{font-size:12px;color:var(--ink-3);margin:9px 0 0}
+.hint code{font-family:"IBM Plex Mono",monospace;font-size:12px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.steps{display:flex;flex-direction:column;gap:14px}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:15px 16px 14px;border-left:3px solid var(--line-2);border-top-left-radius:0;border-bottom-left-radius:0}
+.step[data-state=ok]{border-left-color:var(--accent)}
+.step[data-state=wrong],.step[data-state=error]{border-left-color:var(--bad)}
+.step[data-state=partial]{border-left-color:var(--warn)}
+.step.active{border-color:var(--ink-3)}
+.head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:5px}
+.vname{font-family:"IBM Plex Mono",monospace;font-size:15px;font-weight:500}
+.chip{font-family:"IBM Plex Sans Condensed",sans-serif;text-transform:uppercase;letter-spacing:.09em;font-size:11px;padding:3px 9px;border-radius:99px;background:var(--sunk);color:var(--ink-3);white-space:nowrap}
+.step[data-state=ok] .chip{background:var(--accent-soft);color:var(--accent-ink)}
+.step[data-state=wrong] .chip,.step[data-state=error] .chip{background:var(--bad-soft);color:var(--bad-ink)}
+.step[data-state=partial] .chip{background:var(--warn-soft);color:var(--warn)}
+.ask{margin:0 0 10px;color:var(--ink-2);font-size:14px}
+.expr{
+  width:100%;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:14px;
+  padding:9px 11px;border-radius:8px;border:1px solid var(--line-2);
+  background:var(--sunk);color:var(--ink);
+}
+.expr::placeholder{color:var(--ink-3)}
+.out{display:flex;gap:10px;align-items:baseline;margin-top:9px;min-height:20px;flex-wrap:wrap}
+.out .val{font-family:"IBM Plex Mono",monospace;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.msg{font-size:13px;color:var(--ink-2);margin:0}
+.step[data-state=wrong] .msg,.step[data-state=error] .msg{color:var(--bad)}
+.step[data-state=partial] .msg{color:var(--warn)}
+.ref{margin-top:14px;padding:15px 16px}
+.ref h2{font-size:15px;font-weight:500;margin:0 0 10px}
+.ref dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:13px}
+.ref dt{font-family:"IBM Plex Mono",monospace;color:var(--ink)}
+.ref dd{margin:0;color:var(--ink-2)}
+.locked{color:var(--ink-3);font-size:12px;margin:10px 0 0}
+.scratch{margin-top:26px;padding:16px}
+.scratch h2{font-size:15px;font-weight:500;margin:0 0 4px}
+.scratch p.note{margin:0 0 10px;color:var(--ink-2);font-size:14px}
+.scratch .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.scratch .expr{flex:1;min-width:220px}
+.seg{display:flex;border:1px solid var(--line-2);border-radius:7px;overflow:hidden}
+.seg button{border:0;border-radius:0;background:var(--surface)}
+.seg button[aria-pressed=true]{background:var(--accent-soft);color:var(--accent-ink)}
+@media (prefers-reduced-motion:no-preference){.step,.chip{transition:border-color .15s ease,background .15s ease}}
+</style><style>
+.crumb{max-width:1140px;margin:0 auto;padding:20px 22px 0;font-size:13px}
+.crumb a{color:var(--ink-3);text-decoration:none;font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:11px}
+.crumb a:hover{color:var(--accent)}
+.crumb a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+</style></head>
+<body>
+<p class="crumb"><a href="../../index.html">&larr; Practice lab</a></p>
+
+<div class="bench">
+  <p class="eyebrow">Unreal vector practice</p>
+  <h1>Snake Vector Bench</h1>
+  <p class="lede">Drag the two dots. Write each step as an expression and it is drawn on the grid immediately, then re-checked at eight random positions &mdash; so an answer that only works for one arrangement will not pass.</p>
+
+  <div class="lab">
+    <section class="panel viewport" aria-label="Coordinate viewport">
+      <svg class="plot" viewBox="0 0 560 566" role="img" aria-label="Top-down grid showing the leader and follower positions and the current expression result">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+          </marker>
+        </defs>
+        <g id="grid"></g>
+        <line x1="30" y1="530" x2="30" y2="30" stroke="var(--grid-2)" stroke-width="1"></line>
+        <line x1="30" y1="530" x2="530" y2="530" stroke="var(--grid-2)" stroke-width="1"></line>
+        <text x="34" y="24" fill="var(--ink-3)" font-size="12" font-family="IBM Plex Mono, monospace">+X</text>
+        <text x="524" y="550" fill="var(--ink-3)" font-size="12" font-family="IBM Plex Mono, monospace">+Y</text>
+        <line id="span" stroke="var(--line-2)" stroke-width="1" stroke-dasharray="3 4"></line>
+        <g id="result"></g>
+        <line id="nose" stroke="var(--dot)" stroke-width="2.5" stroke-linecap="round"></line>
+        <circle id="hFollower" class="handle" r="9" fill="var(--surface)" stroke="var(--dot)" stroke-width="2"></circle>
+        <circle id="hLeader" class="handle" r="9" fill="var(--dot)" stroke="var(--dot)" stroke-width="2"></circle>
+        <text id="lblFollower" font-size="12" font-family="IBM Plex Mono, monospace" fill="var(--ink-2)">follower</text>
+        <text id="lblLeader" font-size="12" font-family="IBM Plex Mono, monospace" fill="var(--ink-2)">leader</text>
+      </svg>
+      <div class="readout">
+        <div><span class="k">leader</span><span class="v" id="rLeader"></span></div>
+        <div><span class="k">follower</span><span class="v" id="rFollower"></span></div>
+        <div><span class="k">spacing</span><span class="v" id="rSpacing"></span></div>
+      </div>
+      <div class="controls">
+        <label for="spacing">Spacing</label>
+        <input type="range" id="spacing" min="40" max="300" step="10" value="100">
+        <button type="button" id="shuffle">Move the dots</button>
+      </div>
+      <div class="controls">
+        <label for="speed">Interp speed</label>
+        <input type="range" id="speed" min="1" max="20" step="0.5" value="5">
+        <button type="button" id="run" disabled>Run follow</button>
+      </div>
+      <p class="hint" id="runHint">Solve <code>target</code> and this starts the chase &mdash; then drag the leader around.</p>
+    </section>
+
+    <div>
+      <div class="steps">
+        <article class="step" id="s1" data-state="empty">
+          <div class="head"><span class="vname">delta</span><span class="chip">waiting</span></div>
+          <p class="ask">An arrow from the follower to the leader &mdash; direction and distance together.</p>
+          <input class="expr" id="e1" spellcheck="false" autocomplete="off" value="leader + follower" aria-label="Expression for delta">
+          <div class="out"><span class="val"></span></div>
+          <p class="msg"></p>
+        </article>
+
+        <article class="step" id="s2" data-state="empty">
+          <div class="head"><span class="vname">dir</span><span class="chip">waiting</span></div>
+          <p class="ask">The same line with its length stripped off &mdash; exactly 1 unit long. Either direction is accepted, and the steps below follow whichever you pick.</p>
+          <input class="expr" id="e2" spellcheck="false" autocomplete="off" placeholder="build it out of delta" aria-label="Expression for dir">
+          <div class="out"><span class="val"></span></div>
+          <p class="msg"></p>
+        </article>
+
+        <article class="step" id="s3" data-state="empty">
+          <div class="head"><span class="vname">target</span><span class="chip">waiting</span></div>
+          <p class="ask">The spot exactly one spacing behind the leader, on the line between them.</p>
+          <input class="expr" id="e3" spellcheck="false" autocomplete="off" placeholder="start at the leader, walk backwards" aria-label="Expression for target">
+          <div class="out"><span class="val"></span></div>
+          <p class="msg"></p>
+        </article>
+
+        <article class="step" id="s4" data-state="empty">
+          <div class="head"><span class="vname">facing</span><span class="chip">waiting</span></div>
+          <p class="ask">The yaw angle the segment should face, in degrees.</p>
+          <input class="expr" id="e4" spellcheck="false" autocomplete="off" placeholder="a direction is an angle" aria-label="Expression for facing yaw">
+          <div class="out"><span class="val"></span></div>
+          <p class="msg"></p>
+        </article>
+      </div>
+
+      <section class="panel ref" aria-label="What you can type">
+        <h2>What you can type</h2>
+        <dl>
+          <dt>leader</dt><dd>the filled dot, in unreal units</dd>
+          <dt>follower</dt><dd>the hollow dot, the segment behind it</dd>
+          <dt>spacing</dt><dd>the slider value, a plain number</dd>
+          <dt>delta</dt><dd>unlocked from step 2 onward</dd>
+          <dt>dir</dt><dd>unlocked from step 3 onward, holding exactly what you wrote in step 2</dd>
+          <dt>normalize(v)</dt><dd>same direction, length 1</dd>
+          <dt>length(v)</dt><dd>how long a vector is</dd>
+          <dt>yaw(v)</dt><dd>the angle of a vector, in degrees</dd>
+          <dt>(x, y)</dt><dd>writes a vector; also v.x and v.y</dd>
+        </dl>
+        <p class="locked">A vector times a number scales it. A vector times a vector is refused here, exactly as it is in C++.</p>
+      </section>
+
+      <section class="panel scratch" aria-label="Scratchpad">
+        <h2>Scratchpad</h2>
+        <p class="note">Anything you want to test. Every name is unlocked here.</p>
+        <div class="row">
+          <input class="expr" id="e0" spellcheck="false" autocomplete="off" placeholder="length(leader - follower)" aria-label="Scratchpad expression">
+          <div class="seg" role="group" aria-label="How to draw the result">
+            <button type="button" id="drawPoint" aria-pressed="true">as point</button>
+            <button type="button" id="drawArrow" aria-pressed="false">as arrow</button>
+          </div>
+        </div>
+        <div class="out"><span class="val" id="e0val"></span></div>
+        <p class="msg" id="e0msg"></p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var SVGNS="http://www.w3.org/2000/svg";
+var PAD=30, SIZE=500, WORLD=1000, K=SIZE/WORLD;
+
+function sx(w){ return PAD + w.y*K; }
+function sy(w){ return PAD + SIZE - w.x*K; }
+function toWorld(px,py){ return {x:(PAD+SIZE-py)/K, y:(px-PAD)/K}; }
+function clampW(v){ return Math.max(0,Math.min(WORLD,v)); }
+
+function V(x,y){ return {t:"v",x:x,y:y}; }
+function N(v){ return {t:"n",v:v}; }
+function num(n){ var r=Math.round(n*10)/10; if(Object.is(r,-0)) r=0; return r.toFixed(1); }
+function show(val){ return val.t==="n" ? num(val.v) : "("+num(val.x)+", "+num(val.y)+")"; }
+
+function tokenize(s){
+  var t=[],i=0;
+  while(i<s.length){
+    var c=s.charAt(i);
+    if(c===" "||c==="\t"||c==="\n"){ i++; continue; }
+    if(/[0-9]/.test(c)||(c==="."&&/[0-9]/.test(s.charAt(i+1)))){
+      var j=i; while(j<s.length&&/[0-9.]/.test(s.charAt(j))) j++;
+      var raw=s.slice(i,j), n=parseFloat(raw);
+      if(isNaN(n)) throw new Error("I cannot read the number “"+raw+"”.");
+      t.push({k:"num",v:n}); i=j; continue;
+    }
+    if(/[A-Za-z_]/.test(c)){
+      var m=i; while(m<s.length&&/[A-Za-z_0-9]/.test(s.charAt(m))) m++;
+      t.push({k:"id",v:s.slice(i,m)}); i=m; continue;
+    }
+    if("+-*/(),.".indexOf(c)>=0){ t.push({k:c}); i++; continue; }
+    throw new Error("I do not understand the character “"+c+"”.");
+  }
+  t.push({k:"end"});
+  return t;
+}
+
+function Parser(t){ this.t=t; this.i=0; }
+Parser.prototype.peek=function(){ return this.t[this.i]; };
+Parser.prototype.next=function(){ return this.t[this.i++]; };
+Parser.prototype.eat=function(k,msg){ if(this.peek().k!==k) throw new Error(msg); return this.next(); };
+Parser.prototype.expr=function(){
+  var n=this.term();
+  while(this.peek().k==="+"||this.peek().k==="-"){
+    var op=this.next().k; n={type:"bin",op:op,l:n,r:this.term()};
+  }
+  return n;
+};
+Parser.prototype.term=function(){
+  var n=this.unary();
+  while(this.peek().k==="*"||this.peek().k==="/"){
+    var op=this.next().k; n={type:"bin",op:op,l:n,r:this.unary()};
+  }
+  return n;
+};
+Parser.prototype.unary=function(){
+  if(this.peek().k==="-"){ this.next(); return {type:"neg",v:this.unary()}; }
+  if(this.peek().k==="+"){ this.next(); return this.unary(); }
+  return this.postfix();
+};
+Parser.prototype.postfix=function(){
+  var n=this.primary();
+  while(this.peek().k==="."){
+    this.next();
+    var id=this.eat("id","Write .x or .y after the dot.");
+    if(id.v!=="x"&&id.v!=="y") throw new Error("A vector has only .x and .y, not ."+id.v+".");
+    n={type:"field",v:n,f:id.v};
+  }
+  return n;
+};
+Parser.prototype.primary=function(){
+  var tk=this.peek();
+  if(tk.k==="num"){ this.next(); return {type:"num",v:tk.v}; }
+  if(tk.k==="id"){
+    this.next();
+    if(this.peek().k==="("){
+      this.next();
+      var args=[];
+      if(this.peek().k!==")"){
+        args.push(this.expr());
+        while(this.peek().k===","){ this.next(); args.push(this.expr()); }
+      }
+      this.eat(")","A bracket is left open.");
+      return {type:"call",name:tk.v,args:args};
+    }
+    return {type:"var",name:tk.v};
+  }
+  if(tk.k==="("){
+    this.next();
+    var a=this.expr();
+    if(this.peek().k===","){
+      this.next();
+      var b=this.expr();
+      this.eat(")","A bracket is left open.");
+      return {type:"vec",x:a,y:b};
+    }
+    this.eat(")","A bracket is left open.");
+    return a;
+  }
+  if(tk.k==="end") throw new Error("The expression stops early — something is missing at the end.");
+  throw new Error("I did not expect “"+(tk.v!==undefined?tk.v:tk.k)+"” here.");
+};
+function parse(src){
+  var p=new Parser(tokenize(src));
+  var n=p.expr();
+  if(p.peek().k!=="end") throw new Error("There is leftover text after the expression.");
+  return n;
+}
+
+var KNOWN=["leader","follower","delta","dir","spacing"];
+function ev(n,env){
+  switch(n.type){
+    case "num": return N(n.v);
+    case "vec": {
+      var x=ev(n.x,env), y=ev(n.y,env);
+      if(x.t!=="n"||y.t!=="n") throw new Error("A vector needs two plain numbers inside the brackets.");
+      return V(x.v,y.v);
+    }
+    case "var": {
+      if(Object.prototype.hasOwnProperty.call(env,n.name)) return env[n.name];
+      if(KNOWN.indexOf(n.name)>=0) throw new Error("“"+n.name+"” is not unlocked in this step yet.");
+      throw new Error("I do not know the name “"+n.name+"”.");
+    }
+    case "neg": {
+      var v=ev(n.v,env);
+      return v.t==="n"?N(-v.v):V(-v.x,-v.y);
+    }
+    case "field": {
+      var f=ev(n.v,env);
+      if(f.t!=="v") throw new Error("Only a vector has ."+n.f+".");
+      return N(n.f==="x"?f.x:f.y);
+    }
+    case "call": {
+      var a=n.args.map(function(x){ return ev(x,env); });
+      if(n.name==="normalize"||n.name==="length"||n.name==="yaw"){
+        if(a.length!==1||a[0].t!=="v") throw new Error(n.name+"() takes one vector.");
+        var vv=a[0], L=Math.sqrt(vv.x*vv.x+vv.y*vv.y);
+        if(n.name==="length") return N(L);
+        if(n.name==="normalize") return L<1e-9?V(0,0):V(vv.x/L,vv.y/L);
+        var d=Math.atan2(vv.y,vv.x)*180/Math.PI; if(d<0) d+=360; return N(d);
+      }
+      throw new Error("There is no function called “"+n.name+"”.");
+    }
+    case "bin": {
+      var l=ev(n.l,env), r=ev(n.r,env);
+      if(n.op==="+"||n.op==="-"){
+        var s=n.op==="+"?1:-1;
+        if(l.t==="n"&&r.t==="n") return N(l.v+s*r.v);
+        if(l.t==="v"&&r.t==="v") return V(l.x+s*r.x,l.y+s*r.y);
+        throw new Error("Add or subtract two vectors, or two numbers — not one of each.");
+      }
+      if(n.op==="*"){
+        if(l.t==="n"&&r.t==="n") return N(l.v*r.v);
+        if(l.t==="v"&&r.t==="n") return V(l.x*r.v,l.y*r.v);
+        if(l.t==="n"&&r.t==="v") return V(r.x*l.v,r.y*l.v);
+        throw new Error("Two vectors cannot be multiplied. Multiply a vector by a number.");
+      }
+      if(r.t!=="n") throw new Error("You can only divide by a number.");
+      if(Math.abs(r.v)<1e-12) throw new Error("That divides by zero.");
+      return l.t==="n"?N(l.v/r.v):V(l.x/r.v,l.y/r.v);
+    }
+  }
+  throw new Error("I could not evaluate that.");
+}
+
+function fullEnv(L,F,sp){
+  var dx=L.x-F.x, dy=L.y-F.y, len=Math.sqrt(dx*dx+dy*dy);
+  return {
+    leader:V(L.x,L.y), follower:V(F.x,F.y),
+    delta:V(dx,dy),
+    dir: len<1e-9?V(0,0):V(dx/len,dy/len),
+    spacing:N(sp)
+  };
+}
+function scope(full,allow){
+  var e={};
+  allow.forEach(function(k){ e[k]=full[k]; });
+  return e;
+}
+
+var STEPS=[
+  {id:"s1",input:"e1",allow:["leader","follower","spacing"],draw:"offset",
+   ref:function(f){ return V(f.delta.x,f.delta.y); }},
+  {id:"s2",input:"e2",allow:["leader","follower","delta","spacing"],draw:"unit",
+   ref:function(f){ return V(f.dir.x,f.dir.y); },
+   accept:function(got,f){
+     if(got.t!=="v") return {ok:false,chip:"wrong type",msg:"This step needs a vector, not a number."};
+     var len=Math.sqrt(got.x*got.x+got.y*got.y);
+     if(Math.abs(len-1)>1e-6) return {ok:false,chip:"not yet",msg:"Its length is "+num(len)+". It has to be exactly 1."};
+     if(Math.abs(got.x*f.dir.y-got.y*f.dir.x)>1e-6) return {ok:false,chip:"off the line",msg:"Length 1, but it does not lie along the line between the two dots."};
+     return {ok:true};
+   },
+   okMsg:function(got,f){
+     return (got.x*f.dir.x+got.y*f.dir.y)>0
+       ? "Correct — this one points from the follower to the leader."
+       : "Correct — this one points from the leader to the follower. Step 3 now needs a plus instead of a minus.";
+   }},
+  {id:"s3",input:"e3",allow:["leader","follower","delta","dir","spacing"],draw:"point",
+   ref:function(f){ return V(f.leader.x-f.dir.x*f.spacing.v, f.leader.y-f.dir.y*f.spacing.v); }},
+  {id:"s4",input:"e4",allow:["leader","follower","delta","dir","spacing"],draw:"angle",
+   ref:function(f){ var d=Math.atan2(f.dir.y,f.dir.x)*180/Math.PI; if(d<0) d+=360; return N(d); }}
+];
+
+var state={
+  leader:{x:400,y:500}, follower:{x:100,y:100}, spacing:100,
+  active:"s1", scratchMode:"point",
+  running:false, speed:5, facing:53.13, lastT:0
+};
+
+function near(a,b){
+  if(a.t!==b.t) return false;
+  if(a.t==="n") return Math.abs(a.v-b.v)<=1e-6*(1+Math.abs(b.v));
+  return Math.abs(a.x-b.x)<=1e-6*(1+Math.abs(b.x)) && Math.abs(a.y-b.y)<=1e-6*(1+Math.abs(b.y));
+}
+function randomCase(i){
+  var s=(i*7919+13)%2147483647;
+  function r(){ s=(s*48271)%2147483647; return s/2147483647; }
+  var L,F,d,guard=0;
+  do{
+    L={x:r()*WORLD,y:r()*WORLD};
+    F={x:r()*WORLD,y:r()*WORLD};
+    d=Math.sqrt((L.x-F.x)*(L.x-F.x)+(L.y-F.y)*(L.y-F.y));
+    guard++;
+  } while(d<80 && guard<50);
+  return {L:L,F:F,sp:40+r()*260};
+}
+
+function chainedEnv(L,F,sp){
+  var full=fullEnv(L,F,sp);
+  var src=document.getElementById("e2").value;
+  if(src.trim()){
+    try{
+      var d=ev(parse(src),scope(full,STEPS[1].allow));
+      if(d.t==="v" && Math.abs(Math.sqrt(d.x*d.x+d.y*d.y)-1)<1e-6) full.dir=d;
+    }catch(ignored){}
+  }
+  return full;
+}
+
+function verdictAt(step,ast,L,F,sp){
+  var canon=fullEnv(L,F,sp);
+  var got=ev(ast,scope(chainedEnv(L,F,sp),step.allow));
+  if(step.accept){
+    var a=step.accept(got,canon);
+    return {got:got,canon:canon,ok:a.ok,chip:a.chip,msg:a.msg};
+  }
+  var want=step.ref(canon);
+  if(got.t!==want.t){
+    return {got:got,canon:canon,ok:false,chip:"wrong type",
+      msg:"That gives "+(got.t==="n"?"a number":"a vector")+", but this step needs "+(want.t==="n"?"a number":"a vector")+"."};
+  }
+  if(!near(got,want)){
+    return {got:got,canon:canon,ok:false,chip:"not yet",
+      msg:"With the dots where they are now it should be "+show(want)+"."};
+  }
+  return {got:got,canon:canon,ok:true};
+}
+
+function assess(step,src){
+  if(!src.trim()) return {state:"empty",chip:"waiting",msg:"",val:null};
+  var ast;
+  try{ ast=parse(src); }
+  catch(e){ return {state:"error",chip:"cannot read",msg:e.message,val:null}; }
+  var here;
+  try{ here=verdictAt(step,ast,state.leader,state.follower,state.spacing); }
+  catch(e2){ return {state:"error",chip:"cannot run",msg:e2.message,val:null}; }
+  if(!here.ok) return {state:"wrong",chip:here.chip,msg:here.msg,val:here.got};
+  for(var i=1;i<=8;i++){
+    var c=randomCase(i), there;
+    try{ there=verdictAt(step,ast,c.L,c.F,c.sp); }
+    catch(e3){ return {state:"wrong",chip:"breaks",msg:"It fails once the dots move: "+e3.message,val:here.got}; }
+    if(!there.ok){
+      return {state:"partial",chip:"only here",
+        msg:"Right for these two dots, wrong once they move. Something is hardcoded.",val:here.got};
+    }
+  }
+  return {state:"ok",chip:"matches",
+    msg:step.okMsg?step.okMsg(here.got,here.canon):"Correct at every position.",val:here.got};
+}
+
+function el(tag,attrs){
+  var n=document.createElementNS(SVGNS,tag);
+  for(var k in attrs){ if(Object.prototype.hasOwnProperty.call(attrs,k)) n.setAttribute(k,attrs[k]); }
+  return n;
+}
+
+var gridG=document.getElementById("grid");
+for(var gi=0;gi<=10;gi++){
+  var gp=PAD+gi*50;
+  gridG.appendChild(el("line",{x1:gp,y1:PAD,x2:gp,y2:PAD+SIZE,stroke:"var(--grid)","stroke-width":"1"}));
+  gridG.appendChild(el("line",{x1:PAD,y1:gp,x2:PAD+SIZE,y2:gp,stroke:"var(--grid)","stroke-width":"1"}));
+}
+
+var resultG=document.getElementById("result");
+function drawResult(kind,val){
+  while(resultG.firstChild) resultG.removeChild(resultG.firstChild);
+  if(!val) return;
+  var F=state.follower, ac="var(--accent)";
+  if(kind==="angle"){
+    if(val.t!=="n") return;
+    var rad=val.v*Math.PI/180;
+    var tip={x:F.x+Math.cos(rad)*130,y:F.y+Math.sin(rad)*130};
+    resultG.appendChild(el("line",{x1:sx(F),y1:sy(F),x2:sx(tip),y2:sy(tip),stroke:ac,"stroke-width":"2","marker-end":"url(#ah)"}));
+    var t=el("text",{x:sx(tip)+8,y:sy(tip)-6,fill:ac,"font-size":"12","font-family":"IBM Plex Mono, monospace"});
+    t.textContent=num(val.v)+"°";
+    resultG.appendChild(t);
+    return;
+  }
+  if(val.t!=="v") return;
+  if(kind==="point"){
+    var px=sx(val), py=sy(val);
+    resultG.appendChild(el("line",{x1:px-10,y1:py,x2:px+10,y2:py,stroke:ac,"stroke-width":"1.5"}));
+    resultG.appendChild(el("line",{x1:px,y1:py-10,x2:px,y2:py+10,stroke:ac,"stroke-width":"1.5"}));
+    resultG.appendChild(el("circle",{cx:px,cy:py,r:7,fill:"none",stroke:ac,"stroke-width":"2"}));
+    return;
+  }
+  var scale=1, from=F;
+  if(kind==="unit"){
+    scale=100;
+    var cd=fullEnv(state.leader,state.follower,state.spacing).dir;
+    if(val.x*cd.x+val.y*cd.y < 0) from=state.leader;
+  }
+  var tip2={x:from.x+val.x*scale,y:from.y+val.y*scale};
+  resultG.appendChild(el("line",{x1:sx(from),y1:sy(from),x2:sx(tip2),y2:sy(tip2),stroke:ac,"stroke-width":"2","marker-end":"url(#ah)"}));
+  if(kind==="unit"){
+    var lt=el("text",{x:sx(tip2)+8,y:sy(tip2)-6,fill:ac,"font-size":"12","font-family":"IBM Plex Mono, monospace"});
+    lt.textContent="shown ×100";
+    resultG.appendChild(lt);
+  }
+}
+
+var span=document.getElementById("span");
+var hL=document.getElementById("hLeader"), hF=document.getElementById("hFollower");
+var tL=document.getElementById("lblLeader"), tF=document.getElementById("lblFollower");
+
+var nose=document.getElementById("nose");
+var runBtn=document.getElementById("run"), runHint=document.getElementById("runHint");
+var ALL=["leader","follower","delta","dir","spacing"];
+
+function evalInput(id,allow){
+  var src=document.getElementById(id).value;
+  if(!src.trim()) return null;
+  try{ return ev(parse(src),scope(chainedEnv(state.leader,state.follower,state.spacing),allow)); }
+  catch(e){ return null; }
+}
+function activeValue(){
+  for(var i=0;i<STEPS.length;i++){
+    if(STEPS[i].id===state.active) return {kind:STEPS[i].draw,val:evalInput(STEPS[i].input,STEPS[i].allow)};
+  }
+  if(state.active==="e0") return {kind:state.scratchMode==="point"?"point":"offset",val:evalInput("e0",ALL)};
+  return {kind:"point",val:null};
+}
+function canonYaw(){
+  var d=fullEnv(state.leader,state.follower,state.spacing).dir;
+  var a=Math.atan2(d.y,d.x)*180/Math.PI;
+  return a<0?a+360:a;
+}
+function wantedYaw(){
+  var v=evalInput("e4",STEPS[3].allow);
+  return (v&&v.t==="n")?v.v:canonYaw();
+}
+
+function render(deep){
+  if(deep===undefined) deep=true;
+  var L=state.leader, F=state.follower;
+  hL.setAttribute("cx",sx(L)); hL.setAttribute("cy",sy(L));
+  hF.setAttribute("cx",sx(F)); hF.setAttribute("cy",sy(F));
+  tL.setAttribute("x",sx(L)+14); tL.setAttribute("y",sy(L)+4);
+  tF.setAttribute("x",sx(F)+14); tF.setAttribute("y",sy(F)+4);
+  span.setAttribute("x1",sx(F)); span.setAttribute("y1",sy(F));
+  span.setAttribute("x2",sx(L)); span.setAttribute("y2",sy(L));
+  var rad=state.facing*Math.PI/180, tipN={x:F.x+Math.cos(rad)*46,y:F.y+Math.sin(rad)*46};
+  nose.setAttribute("x1",sx(F)); nose.setAttribute("y1",sy(F));
+  nose.setAttribute("x2",sx(tipN)); nose.setAttribute("y2",sy(tipN));
+  document.getElementById("rLeader").textContent=show(V(L.x,L.y));
+  document.getElementById("rFollower").textContent=show(V(F.x,F.y));
+  document.getElementById("rSpacing").textContent=num(state.spacing);
+
+  if(deep){
+    var ready=false;
+    STEPS.forEach(function(st){
+      var card=document.getElementById(st.id);
+      var r=assess(st,document.getElementById(st.input).value);
+      card.setAttribute("data-state",r.state);
+      card.querySelector(".chip").textContent=r.chip;
+      card.querySelector(".val").textContent=r.val?show(r.val):"";
+      card.querySelector(".msg").textContent=r.msg;
+      if(state.active===st.id) card.classList.add("active"); else card.classList.remove("active");
+      if(st.id==="s3"&&r.state==="ok") ready=true;
+    });
+    var src0=document.getElementById("e0").value;
+    var vEl=document.getElementById("e0val"), mEl=document.getElementById("e0msg");
+    if(!src0.trim()){ vEl.textContent=""; mEl.textContent=""; }
+    else{
+      try{
+        vEl.textContent=show(ev(parse(src0),chainedEnv(L,F,state.spacing)));
+        mEl.textContent="";
+      }catch(e){ vEl.textContent=""; mEl.textContent=e.message; }
+    }
+    runBtn.disabled=!ready;
+    if(!ready&&state.running) stopRun();
+    if(!state.running) runHint.textContent = ready
+      ? "Press run, then drag the leader. The follower is moved by your own target expression."
+      : "Solve target and this starts the chase — then drag the leader around.";
+  }
+
+  var a=activeValue();
+  drawResult(a.kind,a.val);
+}
+
+var raf=null;
+function stopRun(){
+  state.running=false;
+  if(raf) cancelAnimationFrame(raf);
+  raf=null;
+  runBtn.textContent="Run follow";
+  runBtn.setAttribute("aria-pressed","false");
+}
+function startRun(){
+  state.running=true;
+  state.lastT=performance.now();
+  runBtn.textContent="Stop";
+  runBtn.setAttribute("aria-pressed","true");
+  runHint.textContent="Running. Drag the leader — the follower is chasing your target expression.";
+  raf=requestAnimationFrame(step);
+}
+function step(now){
+  if(!state.running) return;
+  var dt=Math.min(0.05,Math.max(0,(now-state.lastT)/1000));
+  state.lastT=now;
+  var k=Math.max(0,Math.min(1,dt*state.speed));
+  var T=evalInput("e3",STEPS[2].allow);
+  if(T&&T.t==="v"){
+    state.follower={x:state.follower.x+(T.x-state.follower.x)*k, y:state.follower.y+(T.y-state.follower.y)*k};
+  }
+  var diff=((wantedYaw()-state.facing+540)%360)-180;
+  state.facing=(state.facing+diff*k+360)%360;
+  render(false);
+  raf=requestAnimationFrame(step);
+}
+runBtn.addEventListener("click",function(){ if(state.running) stopRun(); else startRun(); });
+document.getElementById("speed").addEventListener("input",function(){ state.speed=parseFloat(this.value); });
+
+STEPS.forEach(function(st){
+  var inp=document.getElementById(st.input);
+  inp.addEventListener("input",function(){ state.active=st.id; render(); });
+  inp.addEventListener("focus",function(){ state.active=st.id; render(); });
+});
+
+var e0=document.getElementById("e0");
+e0.addEventListener("input",function(){ state.active="e0"; render(); });
+e0.addEventListener("focus",function(){ state.active="e0"; render(); });
+
+document.getElementById("drawPoint").addEventListener("click",function(){
+  state.scratchMode="point";
+  this.setAttribute("aria-pressed","true");
+  document.getElementById("drawArrow").setAttribute("aria-pressed","false");
+  render();
+});
+document.getElementById("drawArrow").addEventListener("click",function(){
+  state.scratchMode="arrow";
+  this.setAttribute("aria-pressed","true");
+  document.getElementById("drawPoint").setAttribute("aria-pressed","false");
+  render();
+});
+document.getElementById("spacing").addEventListener("input",function(){
+  state.spacing=parseFloat(this.value);
+  render();
+});
+document.getElementById("shuffle").addEventListener("click",function(){
+  var L,F,d,guard=0;
+  do{
+    L={x:60+Math.random()*880,y:60+Math.random()*880};
+    F={x:60+Math.random()*880,y:60+Math.random()*880};
+    d=Math.sqrt((L.x-F.x)*(L.x-F.x)+(L.y-F.y)*(L.y-F.y));
+    guard++;
+  } while(d<200 && guard<50);
+  state.leader={x:Math.round(L.x),y:Math.round(L.y)};
+  state.follower={x:Math.round(F.x),y:Math.round(F.y)};
+  render();
+});
+
+var svg=document.querySelector("svg.plot"), dragging=null;
+function svgPoint(evt){
+  var r=svg.getBoundingClientRect();
+  return { x:(evt.clientX-r.left)*(560/r.width), y:(evt.clientY-r.top)*(566/r.height) };
+}
+function startDrag(which){
+  return function(evt){
+    dragging=which;
+    if(svg.setPointerCapture) svg.setPointerCapture(evt.pointerId);
+    evt.preventDefault();
+  };
+}
+hL.addEventListener("pointerdown",startDrag("leader"));
+hF.addEventListener("pointerdown",startDrag("follower"));
+svg.addEventListener("pointermove",function(evt){
+  if(!dragging) return;
+  var p=svgPoint(evt), w=toWorld(p.x,p.y);
+  state[dragging]={x:Math.round(clampW(w.x)),y:Math.round(clampW(w.y))};
+  render();
+});
+svg.addEventListener("pointerup",function(){ dragging=null; });
+svg.addEventListener("pointercancel",function(){ dragging=null; });
+
+render();
+})();
+</script>
+
+</body>
+</html>
