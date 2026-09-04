@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Framework Placement Bench</title>
+<meta name="description" content="Place twelve pieces of game state into Unreal's framework classes, then check every placement against five situations at once instead of just the one that hides the bug.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#F1F4F1; --surface:#FFFFFF; --sunk:#E8ECE8;
+  --ink:#141E1B; --ink-2:#4E5B57; --ink-3:#7E8A85;
+  --line:#D4DBD6; --line-2:#B6C0BA;
+  --accent:#0B7A5E; --accent-soft:#DAEFE7; --accent-ink:#075243;
+  --warn:#8A6A12; --warn-soft:#F5EBD3;
+  --bad:#A33326; --bad-soft:#F7E2DE;
+  --rail:#B6C0BA; --on-accent:#FFFFFF;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0F1617; --surface:#18211F; --sunk:#131B1A;
+    --ink:#E5ECE8; --ink-2:#A2AFAA; --ink-3:#7A8681;
+    --line:#283432; --line-2:#3A4744;
+    --accent:#45D3A5; --accent-soft:#10312A; --accent-ink:#8DE8C6;
+    --warn:#D9AE55; --warn-soft:#2E2716;
+    --bad:#F09383; --bad-soft:#331A16;
+    --rail:#3A4744; --on-accent:#08211B;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0F1617; --surface:#18211F; --sunk:#131B1A;
+  --ink:#E5ECE8; --ink-2:#A2AFAA; --ink-3:#7A8681;
+  --line:#283432; --line-2:#3A4744;
+  --accent:#45D3A5; --accent-soft:#10312A; --accent-ink:#8DE8C6;
+  --warn:#D9AE55; --warn-soft:#2E2716;
+  --bad:#F09383; --bad-soft:#331A16;
+  --rail:#3A4744; --on-accent:#08211B;
+}
+
+*{box-sizing:border-box}
+html{color-scheme:light dark}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  font-size:15px;line-height:1.6;
+}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+a:focus-visible,button:focus-visible,select:focus-visible,[tabindex]:focus-visible{
+  outline:2px solid var(--accent);outline-offset:3px;border-radius:4px;
+}
+
+.crumb{max-width:1140px;margin:0 auto;padding:20px 22px 0;font-size:13px}
+.crumb a{color:var(--ink-3);font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:11px}
+.crumb a:hover{color:var(--accent);text-decoration:none}
+
+.bench{max-width:1140px;margin:0 auto;padding:10px 22px 72px}
+.eyebrow{
+  font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;
+  font-weight:500;text-transform:uppercase;letter-spacing:.12em;
+  font-size:12px;color:var(--ink-3);margin:0 0 8px;
+}
+h1{font-size:30px;font-weight:500;letter-spacing:-.015em;margin:0 0 10px;text-wrap:balance}
+.lede{margin:0 0 28px;color:var(--ink-2);max-width:64ch}
+.lede b{font-weight:500;color:var(--ink)}
+
+.lab{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:26px;align-items:start}
+@media (max-width:980px){.lab{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.tree-panel{position:sticky;top:18px}
+@media (max-width:980px){.tree-panel{position:static}}
+
+.panel h2{font-size:15px;font-weight:500;margin:0 0 4px}
+.panel .sub{margin:0 0 14px;color:var(--ink-2);font-size:13px}
+
+/* ---------- ownership tree ---------- */
+.tree ul{list-style:none;margin:0;padding:0}
+.tree ul ul{padding-left:14px}
+.tree ul ul>li{position:relative;padding-left:13px}
+.tree ul ul>li::before{content:"";position:absolute;left:0;top:0;bottom:0;width:1px;background:var(--rail)}
+.tree ul ul>li:last-child::before{bottom:auto;height:17px}
+.tree ul ul>li::after{content:"";position:absolute;left:0;top:17px;width:9px;height:1px;background:var(--rail)}
+
+.slot{padding:7px 0 3px}
+.slot .row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.slot .name{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink)}
+.slot .tag{
+  font-family:"IBM Plex Sans Condensed",sans-serif;text-transform:uppercase;letter-spacing:.09em;
+  font-size:10px;padding:1px 7px;border-radius:99px;background:var(--sunk);color:var(--ink-3);
+}
+.slot .tag.srv{background:var(--warn-soft);color:var(--warn)}
+.slot .tag.rep{background:var(--accent-soft);color:var(--accent-ink)}
+.slot.inert .name{color:var(--ink-3)}
+
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;min-height:1px}
+.chip{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;line-height:1.5;
+  padding:1px 7px;border-radius:99px;background:var(--sunk);color:var(--ink-2);
+  border:1px solid transparent;
+}
+.chip.ok{background:var(--accent-soft);color:var(--accent-ink);border-color:transparent}
+.chip.no{background:var(--bad-soft);color:var(--bad)}
+
+/* ---------- controls ---------- */
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 16px}
+button{
+  font:inherit;font-size:13px;padding:7px 14px;border-radius:7px;
+  border:1px solid var(--line-2);background:var(--surface);color:var(--ink);cursor:pointer;
+  font-family:"IBM Plex Mono",monospace;
+}
+button:hover{border-color:var(--ink-3)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+button.primary:hover{filter:brightness(1.06);border-color:var(--accent)}
+
+/* ---------- fact rows ---------- */
+.facts{display:flex;flex-direction:column;gap:0}
+.fact{padding:13px 0;border-top:1px solid var(--line)}
+.fact:first-child{border-top:0;padding-top:2px}
+.fact .q{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:10px;align-items:start}
+@media (max-width:600px){.fact .q{grid-template-columns:20px minmax(0,1fr);}.fact .q select{grid-column:2}}
+.fact .n{
+  font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-3);
+  font-variant-numeric:tabular-nums;padding-top:6px;
+}
+.fact .text{margin:0;padding-top:4px;font-size:14px}
+.fact .scope{
+  display:block;margin-top:3px;
+  font-family:"IBM Plex Sans Condensed",sans-serif;text-transform:uppercase;letter-spacing:.09em;
+  font-size:10px;color:var(--ink-3);
+}
+select{
+  font:inherit;font-size:13px;font-family:"IBM Plex Mono",monospace;
+  padding:6px 9px;border-radius:7px;border:1px solid var(--line-2);
+  background:var(--surface);color:var(--ink);cursor:pointer;min-width:172px;
+}
+select:hover{border-color:var(--ink-3)}
+.fact[data-verdict=ok] select{border-color:var(--accent)}
+.fact[data-verdict=no] select{border-color:var(--bad)}
+
+.verdict{margin:10px 0 0 30px;font-size:13px}
+.verdict .head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:7px}
+.verdict .mark{
+  font-family:"IBM Plex Sans Condensed",sans-serif;text-transform:uppercase;letter-spacing:.09em;
+  font-size:11px;padding:2px 9px;border-radius:99px;
+}
+.verdict .mark.ok{background:var(--accent-soft);color:var(--accent-ink)}
+.verdict .mark.no{background:var(--bad-soft);color:var(--bad)}
+.verdict .tally{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.verdict p{margin:0;color:var(--ink-2)}
+.verdict p+p{margin-top:6px}
+.verdict code{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink)}
+
+.scenes{display:flex;flex-direction:column;gap:3px;margin:8px 0 0}
+.scene{
+  display:grid;grid-template-columns:16px minmax(0,1fr);gap:8px;align-items:baseline;
+  font-size:12.5px;color:var(--ink-2);
+}
+.scene .g{font-family:"IBM Plex Mono",monospace;font-size:12px;line-height:1.5}
+.scene.pass .g{color:var(--accent)}
+.scene.fail .g{color:var(--bad)}
+.scene.fail{color:var(--ink)}
+.scene .why{color:var(--ink-3)}
+
+.trap{
+  margin:9px 0 0;padding:10px 12px;border-radius:8px;
+  background:var(--warn-soft);color:var(--warn);font-size:12.5px;
+}
+.trap b{font-weight:500;font-family:"IBM Plex Sans Condensed",sans-serif;text-transform:uppercase;letter-spacing:.09em;font-size:10px;display:block;margin-bottom:2px}
+
+/* ---------- summary ---------- */
+.summary{
+  margin:0 0 16px;padding:14px 16px;border-radius:10px;
+  background:var(--sunk);border:1px solid var(--line);
+}
+.summary.hot{background:var(--warn-soft);border-color:transparent}
+.summary h3{
+  margin:0 0 6px;font-size:11px;font-weight:500;
+  font-family:"IBM Plex Sans Condensed",sans-serif;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-3);
+}
+.summary p{margin:0;font-size:14px;color:var(--ink-2)}
+.summary p+p{margin-top:7px}
+.summary b{font-weight:500;color:var(--ink);font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.summary.hot p{color:var(--warn)}
+.summary.hot b{color:var(--warn)}
+
+.legend{
+  margin-top:14px;padding-top:13px;border-top:1px solid var(--line);
+  font-size:12px;color:var(--ink-3);
+}
+.legend p{margin:0 0 5px}
+.legend p:last-child{margin:0}
+.legend code{font-family:"IBM Plex Mono",monospace;color:var(--ink-2)}
+
+.closing{margin-top:26px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink-2);font-size:13px;max-width:70ch}
+.closing p{margin:0 0 8px}
+.closing p:last-child{margin:0}
+.closing code{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink)}
+</style>
+</head>
+<body>
+<p class="crumb"><a href="../../index.html">&larr; Practice lab</a></p>
+
+<div class="bench">
+  <p class="eyebrow">Unreal &middot; gameplay framework</p>
+  <h1>Framework Placement Bench</h1>
+  <p class="lede">Twelve pieces of game state, six classes to put them in. The tree on the left fills in as you choose. Then every placement gets run through five situations at once — because <b>the one situation almost everybody tests in is the one that hides the mistake</b>.</p>
+
+  <div class="lab">
+
+    <!-- ================= LEFT: the tree ================= -->
+    <section class="panel tree-panel" aria-label="Ownership tree">
+      <h2>Where you put things</h2>
+      <p class="sub">Runtime ownership, not inheritance. Indentation means &ldquo;is created and owned by&rdquo;.</p>
+
+      <div class="tree">
+        <ul>
+          <li>
+            <div class="slot" data-slot="GameInstance">
+              <div class="row"><span class="name">UGameInstance</span><span class="tag">survives travel</span></div>
+              <div class="chips"></div>
+            </div>
+            <ul>
+              <li>
+                <div class="slot inert">
+                  <div class="row"><span class="name">UWorld</span><span class="tag">rebuilt each map</span></div>
+                </div>
+                <ul>
+                  <li>
+                    <div class="slot" data-slot="GameMode">
+                      <div class="row"><span class="name">AGameModeBase</span><span class="tag srv">server only</span></div>
+                      <div class="chips"></div>
+                    </div>
+                  </li>
+                  <li>
+                    <div class="slot" data-slot="GameState">
+                      <div class="row"><span class="name">AGameStateBase</span><span class="tag rep">replicated</span></div>
+                      <div class="chips"></div>
+                    </div>
+                  </li>
+                  <li>
+                    <div class="slot" data-slot="PlayerController">
+                      <div class="row"><span class="name">APlayerController</span><span class="tag">local only</span></div>
+                      <div class="chips"></div>
+                    </div>
+                    <ul>
+                      <li>
+                        <div class="slot" data-slot="PlayerState">
+                          <div class="row"><span class="name">APlayerState</span><span class="tag rep">replicated</span></div>
+                          <div class="chips"></div>
+                        </div>
+                      </li>
+                      <li>
+                        <div class="slot" data-slot="Pawn">
+                          <div class="row"><span class="name">APawn</span><span class="tag rep">dies and respawns</span></div>
+                          <div class="chips"></div>
+                        </div>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+
+      <div class="legend">
+        <p><code>server only</code> &mdash; the pointer is null on every client.</p>
+        <p><code>local only</code> &mdash; exists on the server and on that one player's machine, nowhere else.</p>
+        <p><code>replicated</code> &mdash; every machine has a copy of every player's.</p>
+        <p><code>dies and respawns</code> &mdash; destroyed the moment the player is killed.</p>
+      </div>
+    </section>
+
+    <!-- ================= RIGHT: the drill ================= -->
+    <section class="panel" aria-label="Placement drill">
+      <h2>Place each piece of state</h2>
+      <p class="sub">It opens pre-filled with a mix of correct answers and the mistakes people actually ship. Change what you disagree with, then run the checks.</p>
+
+      <div class="bar">
+        <button type="button" id="run" class="primary">Run the checks</button>
+        <button type="button" id="reveal">Reveal answers</button>
+        <button type="button" id="reset">Reset</button>
+      </div>
+
+      <div id="summary"></div>
+      <div class="facts" id="facts"></div>
+    </section>
+  </div>
+
+  <div class="closing">
+    <p><b>The rule behind all twelve.</b> Ask two questions in order. <em>How long must this outlive its owner?</em> &mdash; that picks the depth in the tree. <em>Who is allowed to read it?</em> &mdash; that picks between the classes at that depth.</p>
+    <p>Score on the <code>Pawn</code> passes every test until somebody dies. Match state read straight off the <code>GameMode</code> passes every test until a real client connects. Settings on the <code>GameMode</code> pass every test until you call <code>OpenLevel</code>. None of those are subtle bugs &mdash; they are just invisible to the one arrangement you happen to be testing in.</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* Each slot's real behaviour, as five plain facts about the class. */
+  var SLOTS = {
+    GameInstance:     { label: "UGameInstance",     scope: "machine", clientRead: true,  survivesDeath: true,  othersSee: false, survivesTravel: true,  localOnly: true  },
+    GameMode:         { label: "AGameModeBase",     scope: "match",   clientRead: false, survivesDeath: true,  othersSee: false, survivesTravel: false, localOnly: false },
+    GameState:        { label: "AGameStateBase",    scope: "match",   clientRead: true,  survivesDeath: true,  othersSee: true,  survivesTravel: false, localOnly: false },
+    PlayerController: { label: "APlayerController", scope: "player",  clientRead: true,  survivesDeath: true,  othersSee: false, survivesTravel: false, localOnly: true  },
+    PlayerState:      { label: "APlayerState",      scope: "player",  clientRead: true,  survivesDeath: true,  othersSee: true,  survivesTravel: false, localOnly: false },
+    Pawn:             { label: "APawn",             scope: "pawn",    clientRead: true,  survivesDeath: false, othersSee: true,  survivesTravel: false, localOnly: false }
+  };
+
+  var ORDER = ["GameInstance", "GameMode", "GameState", "PlayerController", "PlayerState", "Pawn"];
+
+  var SCOPE_TEXT = {
+    machine: "one value per running process",
+    match:   "one value for the whole match",
+    player:  "one value per participant",
+    pawn:    "one value per body"
+  };
+
+  /* needs: what the piece of state genuinely requires.
+     start: the answer the page opens with — some right, some the classic mistake. */
+  var FACTS = [
+    { text: "The kill count shown next to a player's name on the scoreboard.",
+      answer: "PlayerState", scope: "player", needs: ["clientRead", "survivesDeath", "othersSee"],
+      start: "Pawn",
+      why: "It has to outlive the body that earned it, and every other player has to be able to read it.",
+      trap: "On the Pawn this is correct all the way up to the first death. Playtest without dying and it looks finished." },
+
+    { text: "Seconds left in the round, drawn on every player's screen.",
+      answer: "GameState", scope: "match", needs: ["clientRead", "othersSee"],
+      start: "GameMode",
+      why: "One value for the match, and every client has to read it directly to draw it.",
+      trap: "In PIE the GameMode exists in the same process as your HUD, so reading it works. On a real client the pointer is null and the timer shows nothing." },
+
+    { text: "Deciding that the round is over and which team won.",
+      answer: "GameMode", scope: "match", authorityOnly: true,
+      why: "A rule. It must be arbitrated by the server and unreachable from any client.",
+      start: "GameState",
+      trap: "GameState is replicated, so putting the decision there hands the rule to every client. It still produces the right winner in a solo test." },
+
+    { text: "The graphics quality the player picked in the options menu.",
+      answer: "GameInstance", scope: "machine", needs: ["survivesTravel"],
+      start: "GameMode",
+      why: "It has to still be there after the map changes, and it is a property of this machine, not of the match.",
+      trap: "The GameMode is destroyed by OpenLevel along with everything else in the World. Test in one level and you will never see it." },
+
+    { text: "Rounds left in the magazine of the gun you are currently holding.",
+      answer: "Pawn", scope: "pawn", needs: ["clientRead", "othersSee"],
+      start: "PlayerState",
+      why: "It belongs to the body. When the body dies the magazine goes with it, which is exactly what you want.",
+      trap: "On the PlayerState it survives death — so you respawn holding a half-empty magazine from your last life." },
+
+    { text: "Which UMG widgets are currently on screen for this player.",
+      answer: "PlayerController", scope: "player", localOnly: true, needs: ["clientRead"],
+      why: "Purely local presentation. No other machine should have a copy, and it must outlive the pawn.",
+      start: "Pawn",
+      trap: "On the Pawn your whole HUD is destroyed and rebuilt every time you die." },
+
+    { text: "Which team this player is on.",
+      answer: "PlayerState", scope: "player", needs: ["clientRead", "survivesDeath", "othersSee"],
+      start: "PlayerState",
+      why: "Per player, must survive respawning, and everyone needs it to colour nameplates and pick targets.",
+      trap: "" },
+
+    { text: "Choosing which PlayerStart a respawning player appears at.",
+      answer: "GameMode", scope: "match", authorityOnly: true,
+      start: "PlayerController",
+      why: "A rule about the match, executed by the authority. This is literally ChoosePlayerStart.",
+      trap: "On the PlayerController a client picks its own spawn point. In single player that is invisible; online it is a cheat." },
+
+    { text: "Weapons the player has unlocked, carried from match to match.",
+      answer: "GameInstance", scope: "machine", needs: ["survivesTravel"],
+      start: "PlayerState",
+      why: "It must survive OpenLevel, and only the GameInstance does.",
+      trap: "PlayerState survives death, which makes it feel persistent. It does not survive travel — the unlocks are gone at the next map." },
+
+    { text: "Which player is currently carrying the flag.",
+      answer: "GameState", scope: "match", needs: ["clientRead", "othersSee"],
+      start: "GameState",
+      why: "One value for the match that every client has to read to draw the objective marker.",
+      trap: "" },
+
+    { text: "Which input mapping context is active for this player right now.",
+      answer: "PlayerController", scope: "player", localOnly: true, needs: ["clientRead"],
+      start: "GameInstance",
+      why: "Input is per seat and purely local. It must outlive the pawn so controls still work while you are dead.",
+      trap: "On the GameInstance it is shared by every local player, so split-screen player two silently steals player one's controls." },
+
+    { text: "The character's current movement mode — walking, falling, swimming.",
+      answer: "Pawn", scope: "pawn", needs: ["clientRead", "othersSee"],
+      start: "Pawn",
+      why: "It describes the body, everyone needs it to pick the right animation, and it is meaningless once the body is gone.",
+      trap: "" }
+  ];
+
+  /* The five situations every placement gets run through. */
+  function scenesFor(fact) {
+    var out = [{
+      id: "pie",
+      label: "PIE, one player, nothing dies",
+      pass: true,
+      why: "server and client are the same process, and nothing is ever destroyed"
+    }];
+
+    if (fact.authorityOnly) {
+      out.push({ id: "auth", label: "A client tries to read the rule",
+                 test: function (s) { return !s.clientRead; },
+                 why: "must be unreachable from a client" });
+    } else if (fact.needs && fact.needs.indexOf("clientRead") !== -1) {
+      out.push({ id: "client", label: "A connected client has to read it",
+                 test: function (s) { return s.clientRead; },
+                 why: "the client draws it, so the client must have it" });
+    }
+
+    if (fact.needs && fact.needs.indexOf("survivesDeath") !== -1) {
+      out.push({ id: "death", label: "The pawn dies and respawns",
+                 test: function (s) { return s.survivesDeath; },
+                 why: "the value has to outlive the body" });
+    }
+
+    if (fact.localOnly) {
+      out.push({ id: "local", label: "Another player's machine",
+                 test: function (s) { return s.localOnly; },
+                 why: "nobody else should have a copy" });
+    } else if (fact.needs && fact.needs.indexOf("othersSee") !== -1) {
+      out.push({ id: "others", label: "Another player has to see it",
+                 test: function (s) { return s.othersSee; },
+                 why: "it replicates to every machine" });
+    }
+
+    if (fact.needs && fact.needs.indexOf("survivesTravel") !== -1) {
+      out.push({ id: "travel", label: "OpenLevel to the next map",
+                 test: function (s) { return s.survivesTravel; },
+                 why: "the World and every actor in it is destroyed" });
+    }
+
+    out.push({ id: "scope", label: "Granularity — " + SCOPE_TEXT[fact.scope],
+               test: function (s) { return s.scope === fact.scope; },
+               why: "the wrong granularity stores one value where you needed many, or the reverse" });
+
+    return out;
+  }
+
+  var factsEl = document.getElementById("facts");
+  var summaryEl = document.getElementById("summary");
+  var graded = false;
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  /* ---------- build the rows ---------- */
+  FACTS.forEach(function (fact, i) {
+    var row = el("div", "fact");
+    row.id = "fact-" + i;
+
+    var q = el("div", "q");
+    q.appendChild(el("span", "n", String(i + 1).padStart(2, "0")));
+
+    var textWrap = el("p", "text");
+    textWrap.appendChild(document.createTextNode(fact.text));
+    textWrap.appendChild(el("span", "scope", SCOPE_TEXT[fact.scope]));
+    q.appendChild(textWrap);
+
+    var sel = document.createElement("select");
+    sel.setAttribute("aria-label", "Class for: " + fact.text);
+    ORDER.forEach(function (key) {
+      var o = document.createElement("option");
+      o.value = key;
+      o.textContent = SLOTS[key].label;
+      sel.appendChild(o);
+    });
+    sel.value = fact.start;
+    sel.addEventListener("change", function () {
+      row.removeAttribute("data-verdict");
+      var v = row.querySelector(".verdict");
+      if (v) v.remove();
+      paintTree();
+      if (graded) { graded = false; summaryEl.innerHTML = ""; }
+    });
+    q.appendChild(sel);
+
+    row.appendChild(q);
+    factsEl.appendChild(row);
+    fact._sel = sel;
+    fact._row = row;
+  });
+
+  /* ---------- the tree mirrors your choices ---------- */
+  function paintTree() {
+    ORDER.forEach(function (key) {
+      var host = document.querySelector('.slot[data-slot="' + key + '"] .chips');
+      if (!host) return;
+      host.innerHTML = "";
+      FACTS.forEach(function (fact, i) {
+        if (fact._sel.value !== key) return;
+        var chip = el("span", "chip", String(i + 1).padStart(2, "0"));
+        chip.title = fact.text;
+        if (graded) chip.className += fact._sel.value === fact.answer ? " ok" : " no";
+        host.appendChild(chip);
+      });
+    });
+  }
+
+  /* ---------- grading ---------- */
+  function grade() {
+    graded = true;
+    var right = 0, wrongButPassesSolo = 0, wrong = 0;
+
+    FACTS.forEach(function (fact) {
+      var chosen = fact._sel.value;
+      var slot = SLOTS[chosen];
+      var ok = chosen === fact.answer;
+      var scenes = scenesFor(fact);
+
+      var results = scenes.map(function (sc) {
+        return { sc: sc, pass: sc.pass === true ? true : !!sc.test(slot) };
+      });
+      var passed = results.filter(function (r) { return r.pass; }).length;
+
+      if (ok) { right++; } else {
+        wrong++;
+        if (results[0].pass) wrongButPassesSolo++;
+      }
+
+      var old = fact._row.querySelector(".verdict");
+      if (old) old.remove();
+      fact._row.setAttribute("data-verdict", ok ? "ok" : "no");
+
+      var v = el("div", "verdict");
+      var head = el("div", "head");
+      head.appendChild(el("span", "mark " + (ok ? "ok" : "no"), ok ? "correct" : "wrong"));
+      head.appendChild(el("span", "tally",
+        "passes " + passed + " of " + results.length + " situations"));
+      v.appendChild(head);
+
+      if (!ok) {
+        var p = el("p");
+        p.innerHTML = "The right home is <code>" + SLOTS[fact.answer].label + "</code>. " + fact.why;
+        v.appendChild(p);
+      } else {
+        v.appendChild(el("p", null, fact.why));
+      }
+
+      var list = el("div", "scenes");
+      results.forEach(function (r) {
+        var line = el("div", "scene " + (r.pass ? "pass" : "fail"));
+        line.appendChild(el("span", "g", r.pass ? "✓" : "✗"));
+        var body = el("span");
+        body.appendChild(document.createTextNode(r.sc.label));
+        body.appendChild(el("span", "why", " — " + r.sc.why));
+        line.appendChild(body);
+        list.appendChild(line);
+      });
+      v.appendChild(list);
+
+      if (!ok && fact.trap && results[0].pass) {
+        var t = el("div", "trap");
+        t.appendChild(el("b", null, "Why this survives a playtest"));
+        t.appendChild(document.createTextNode(fact.trap));
+        v.appendChild(t);
+      }
+
+      fact._row.appendChild(v);
+    });
+
+    paintTree();
+    writeSummary(right, wrong, wrongButPassesSolo);
+  }
+
+  function writeSummary(right, wrong, soloPass) {
+    summaryEl.innerHTML = "";
+    var box = el("div", "summary" + (soloPass > 0 ? " hot" : ""));
+    box.appendChild(el("h3", null, "Result"));
+
+    var p1 = el("p");
+    p1.innerHTML = "<b>" + right + " of " + FACTS.length + "</b> placed correctly.";
+    box.appendChild(p1);
+
+    var p2 = el("p");
+    if (wrong === 0) {
+      p2.innerHTML = "Nothing left to catch. Every piece of state sits where its lifetime and its audience actually require.";
+    } else if (soloPass === wrong) {
+      p2.innerHTML = "All <b>" + wrong + "</b> of your wrong answers still pass a solo PIE test with nothing dying. " +
+        "That is the only test most people run, which is why these ship.";
+    } else {
+      p2.innerHTML = "<b>" + soloPass + "</b> of your <b>" + wrong + "</b> wrong answers still pass a solo PIE test with nothing dying &mdash; " +
+        "they would look finished in the arrangement you are most likely to test in.";
+    }
+    box.appendChild(p2);
+    summaryEl.appendChild(box);
+  }
+
+  /* ---------- buttons ---------- */
+  document.getElementById("run").addEventListener("click", grade);
+
+  document.getElementById("reveal").addEventListener("click", function () {
+    FACTS.forEach(function (fact) { fact._sel.value = fact.answer; });
+    grade();
+  });
+
+  document.getElementById("reset").addEventListener("click", function () {
+    graded = false;
+    summaryEl.innerHTML = "";
+    FACTS.forEach(function (fact) {
+      fact._sel.value = fact.start;
+      fact._row.removeAttribute("data-verdict");
+      var v = fact._row.querySelector(".verdict");
+      if (v) v.remove();
+    });
+    paintTree();
+  });
+
+  paintTree();
+})();
+</script>
+</body>
+</html>
