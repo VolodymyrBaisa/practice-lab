@@ -1,0 +1,2051 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unreal Gameplay Framework Map</title>
+<meta name="description" content="Every major class family in Unreal's gameplay framework, what each one owns, and the rule that decides where a piece of game logic belongs.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#F1F4F1; --surface:#FFFFFF; --surface-2:#E8ECE8; --code-bg:#E8ECE8;
+  --ink:#141E1B; --ink-2:#4E5B57; --muted:#7E8A85;
+  --rail:#B6C0BA; --hair:#D4DBD6;
+  --accent:#0B7A5E; --accent-soft:#DAEFE7; --accent-ink:#075243;
+  --srv:#8A6A12;  --srv-bg:#F5EBD3;
+  --rep:#0B7A5E;  --rep-bg:#DAEFE7;
+  --loc:#3B5F91;  --loc-bg:#DEE5F0;
+  --none:#6E7A76; --none-bg:#E3E8E4;
+  --plug:#6B4B8A; --plug-bg:#EDE4F4;
+  --bad:#A33326;
+
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --cond:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0F1617; --surface:#18211F; --surface-2:#131B1A; --code-bg:#0B1211;
+    --ink:#E5ECE8; --ink-2:#A2AFAA; --muted:#7A8681;
+    --rail:#3A4744; --hair:#283432;
+    --accent:#45D3A5; --accent-soft:#10312A; --accent-ink:#8DE8C6;
+    --srv:#D9AE55;  --srv-bg:#2E2716;
+    --rep:#45D3A5;  --rep-bg:#10312A;
+    --loc:#85AEE4;  --loc-bg:#17253A;
+    --none:#9AA5A7; --none-bg:#242C2E;
+    --plug:#B79AD8; --plug-bg:#291F38;
+    --bad:#F09383;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0F1617; --surface:#18211F; --surface-2:#131B1A; --code-bg:#0B1211;
+  --ink:#E5ECE8; --ink-2:#A2AFAA; --muted:#7A8681;
+  --rail:#3A4744; --hair:#283432;
+  --accent:#45D3A5; --accent-soft:#10312A; --accent-ink:#8DE8C6;
+  --srv:#D9AE55;  --srv-bg:#2E2716;
+  --rep:#45D3A5;  --rep-bg:#10312A;
+  --loc:#85AEE4;  --loc-bg:#17253A;
+  --none:#9AA5A7; --none-bg:#242C2E;
+  --plug:#B79AD8; --plug-bg:#291F38;
+  --bad:#F09383;
+}
+
+*{box-sizing:border-box}
+html{color-scheme:light dark}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:var(--sans);font-size:15px;line-height:1.6;
+}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+a:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+.crumb{max-width:1140px;margin:0 auto;padding:20px 22px 0;font-size:13px;display:flex;gap:14px;flex-wrap:wrap}
+.crumb a{color:var(--muted);font-family:var(--cond);text-transform:uppercase;letter-spacing:.1em;font-size:11px}
+.crumb a:hover{color:var(--accent);text-decoration:none}
+
+.wrap{max-width:1140px;margin:0 auto;padding:10px 22px 72px}
+
+/* ---------- masthead ---------- */
+.mast{display:flex;flex-direction:column;gap:9px;margin-bottom:14px}
+.eyebrow{
+  font-family:var(--cond);font-weight:500;text-transform:uppercase;
+  letter-spacing:.12em;font-size:12px;color:var(--muted);margin:0;
+}
+h1{font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1.15;margin:0;text-wrap:balance}
+.standfirst{font-size:15px;color:var(--ink-2);max-width:64ch;margin:0}
+.standfirst b{font-weight:500;color:var(--ink)}
+.mast-rule{height:1px;background:var(--hair)}
+
+/* ---------- sticky nav ---------- */
+.navbar{
+  position:sticky;top:0;z-index:20;background:var(--ground);
+  border-bottom:1px solid var(--hair);padding:12px 0 11px;margin-bottom:28px;
+  display:flex;flex-direction:column;gap:9px;
+}
+.searchrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#q{
+  flex:1 1 18rem;min-width:12rem;font-family:var(--mono);font-size:13px;
+  padding:7px 10px;color:var(--ink);background:var(--surface);
+  border:1px solid var(--rail);border-radius:7px;
+}
+#q::placeholder{color:var(--muted)}
+#q:focus-visible{border-color:var(--accent)}
+#count{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chips a{
+  font-family:var(--cond);font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);padding:3px 9px;border:1px solid var(--hair);border-radius:99px;
+}
+.chips a:hover{color:var(--accent);border-color:var(--accent);text-decoration:none}
+
+/* ---------- sections ---------- */
+section{display:flex;flex-direction:column;gap:14px;margin-bottom:46px;scroll-margin-top:120px}
+.sec-head{display:flex;flex-direction:column;gap:4px}
+h2{font-size:21px;font-weight:500;letter-spacing:-.012em;margin:0;text-wrap:balance}
+h3{font-size:15px;font-weight:500;margin:10px 0 -4px}
+.sec-note{color:var(--ink-2);font-size:14px;max-width:70ch;margin:0}
+.sec-note code,.rule code,td code,li code,p code,ol.steps code{font-family:var(--mono);font-size:.86em;color:var(--ink)}
+
+/* ---------- badges ---------- */
+.badge{
+  font-family:var(--cond);font-size:10px;font-weight:500;letter-spacing:.09em;
+  text-transform:uppercase;padding:2px 8px;white-space:nowrap;border-radius:99px;
+}
+.b-srv{color:var(--srv);background:var(--srv-bg)}
+.b-rep{color:var(--accent-ink);background:var(--rep-bg)}
+.b-loc{color:var(--loc);background:var(--loc-bg)}
+.b-none{color:var(--none);background:var(--none-bg)}
+.b-plug{color:var(--plug);background:var(--plug-bg)}
+
+.legend{
+  display:flex;flex-wrap:wrap;gap:7px 9px;align-items:center;
+  padding:11px 13px;background:var(--surface);border:1px solid var(--hair);border-radius:10px;
+}
+.legend .lg-title{font-family:var(--cond);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+
+.pfx{
+  font-family:var(--mono);font-size:10px;font-weight:500;
+  width:17px;height:17px;display:inline-grid;place-items:center;
+  border:1px solid currentColor;border-radius:4px;flex:none;align-self:center;
+}
+.pfx-a{color:var(--accent)}
+.pfx-u{color:var(--muted)}
+
+/* ---------- trees ---------- */
+.scroller{overflow-x:auto;padding-bottom:4px}
+.tree,.panel{
+  min-width:44rem;background:var(--surface);border:1px solid var(--hair);
+  border-radius:10px;padding:15px 16px;
+}
+.tree ul{list-style:none;margin:0;padding:0}
+.tree ul ul{padding-left:17px}
+.tree ul ul>li{position:relative;padding-left:15px}
+.tree ul ul>li::before{content:"";position:absolute;left:0;top:0;bottom:0;width:1px;background:var(--rail)}
+.tree ul ul>li:last-child::before{bottom:auto;height:16px}
+.tree ul ul>li::after{content:"";position:absolute;left:0;top:16px;width:10px;height:1px;background:var(--rail)}
+.tree ul ul>li[hidden]::before,.tree ul ul>li[hidden]::after{display:none}
+
+.node{
+  display:grid;grid-template-columns:17px minmax(11rem,max-content) 1fr max-content;
+  gap:9px;align-items:baseline;padding:4px 0;min-height:31px;
+}
+.node>code{font-family:var(--mono);font-size:13px;color:var(--ink);white-space:nowrap}
+.node .desc{color:var(--ink-2);font-size:13.5px;line-height:1.45}
+.node .desc em{font-style:normal;color:var(--accent);font-family:var(--mono);font-size:12.5px}
+.node .badge{align-self:center}
+.tree>ul>li>.node>code{font-size:13.5px}
+
+.grp{
+  font-family:var(--cond);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);padding:15px 0 5px;border-top:1px solid var(--hair);margin-top:11px;
+}
+.grp:first-child{border-top:0;margin-top:0;padding-top:0}
+
+/* ---------- tables ---------- */
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:40rem}
+thead th{
+  font-family:var(--cond);font-size:11px;font-weight:500;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);text-align:left;
+  padding:0 14px 8px 0;border-bottom:1px solid var(--rail);white-space:nowrap;
+}
+tbody td{padding:9px 14px 9px 0;border-bottom:1px solid var(--hair);vertical-align:top;color:var(--ink-2)}
+tbody td:first-child{color:var(--ink)}
+tbody code{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+.cls td:first-child code{white-space:nowrap}
+.cls td:first-child{width:30%}
+.matrix td:not(:first-child),.matrix th:not(:first-child){text-align:center;padding-right:8px;font-variant-numeric:tabular-nums}
+.matrix .yes{color:var(--accent);font-weight:500}
+.matrix .no{color:var(--muted)}
+.matrix tbody td:first-child{white-space:nowrap}
+
+/* ---------- code ---------- */
+figure.ex{margin:4px 0 0;display:flex;flex-direction:column;gap:5px}
+figure.ex figcaption{font-family:var(--cond);font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+pre{
+  margin:0;padding:13px 15px;overflow-x:auto;background:var(--code-bg);
+  border:1px solid var(--hair);border-radius:10px;
+}
+pre code{font-family:var(--mono);font-size:12.5px;line-height:1.65;color:var(--ink);background:none;padding:0}
+pre .c{color:var(--muted);font-style:italic}
+pre .s{color:var(--rep)}
+pre .n{color:var(--loc)}
+pre .p{color:var(--plug)}
+pre .t{color:var(--accent)}
+pre .k{color:var(--srv)}
+
+/* ---------- rules / notes ---------- */
+.rules{display:grid;gap:7px}
+.rule{
+  display:grid;grid-template-columns:24px 1fr;gap:11px;align-items:start;
+  padding:12px 14px;background:var(--surface);border:1px solid var(--hair);
+  border-left:2px solid var(--accent);border-radius:10px;
+}
+.rule .n{font-family:var(--mono);font-size:12px;color:var(--accent);padding-top:1px}
+.rule p{margin:0;color:var(--ink-2);font-size:14px}
+.rule strong{color:var(--ink);font-weight:500}
+
+ol.steps{margin:0;padding-left:20px;color:var(--ink-2);font-size:13.5px}
+ol.steps li{padding:2px 0}
+ol.steps .hi{color:var(--accent);font-weight:500}
+
+.cols2{display:grid;grid-template-columns:repeat(auto-fit,minmax(19rem,1fr));gap:14px}
+
+.note{
+  padding:14px 16px;background:var(--surface-2);border:1px solid var(--hair);
+  border-radius:10px;font-size:13.5px;color:var(--ink-2);
+}
+.note h3{font-size:14px;font-weight:500;margin:0 0 6px;color:var(--ink)}
+.note p{margin:0 0 7px}
+.note p:last-child{margin-bottom:0}
+
+.srcs{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:4px;margin-top:14px}
+
+@media (max-width:640px){
+  .wrap{padding:8px 16px 56px}
+  section{scroll-margin-top:150px}
+  .tree,.panel{min-width:0}
+  h1{font-size:25px}
+}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<p class="crumb">
+  <a href="../../index.html">&larr; Practice lab</a>
+  <a href="../../practices/framework-placement/index.html">Drill this &rarr;</a>
+</p>
+<div class="wrap">
+
+  <header class="mast">
+    <p class="eyebrow">Unreal &middot; class reference</p>
+    <h1>Gameplay Framework Map</h1>
+    <div class="mast-rule"></div>
+    <p class="standfirst">Where your game logic actually lives. Every class family in the engine, what each one owns, and the rule that decides which one your next feature belongs in. Two hierarchies matter: <strong>inheritance</strong> tells you what a class <em>is</em>; <strong>ownership</strong> tells you who spawns it and who can see it.</p>
+  </header>
+
+  <nav class="navbar">
+    <div class="searchrow">
+      <input id="q" type="search" placeholder="Filter every class and row on this page — try &quot;replicat&quot;, &quot;Montage&quot;, &quot;Subsystem&quot;" aria-label="Filter classes">
+      <span id="count"></span>
+    </div>
+    <div class="chips">
+      <a href="#key">Reading key</a>
+      <a href="#core">Core objects</a>
+      <a href="#world">World &amp; levels</a>
+      <a href="#actors">Actors</a>
+      <a href="#components">Components</a>
+      <a href="#framework">Framework 8</a>
+      <a href="#subsystems">Subsystems</a>
+      <a href="#input">Input</a>
+      <a href="#ai">AI</a>
+      <a href="#anim">Animation</a>
+      <a href="#physics">Physics</a>
+      <a href="#render">Rendering</a>
+      <a href="#audio">Audio</a>
+      <a href="#ui">UI</a>
+      <a href="#net">Networking</a>
+      <a href="#gas">Abilities</a>
+      <a href="#data">Data &amp; save</a>
+      <a href="#lib">Libraries</a>
+      <a href="#features">Game Features</a>
+      <a href="#pcg">PCG</a>
+      <a href="#types">Plain types</a>
+      <a href="#lifecycle">Lifecycle</a>
+      <a href="#placement">Where logic goes</a>
+      <a href="#rules">Rules</a>
+      <a href="#gotchas">Gotchas</a>
+    </div>
+  </nav>
+
+  <!-- ============ KEY ============ -->
+  <section id="key" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">00 &nbsp;·&nbsp; How to read this</div>
+      <h2>Prefixes, badges, and the two hierarchies</h2>
+    </div>
+
+    <div class="legend">
+      <span class="lg-title">Network scope</span>
+      <span class="badge b-srv">server only</span>
+      <span class="badge b-rep">replicated to all</span>
+      <span class="badge b-loc">local client only</span>
+      <span class="badge b-none">per machine</span>
+      <span class="badge b-plug">plugin</span>
+    </div>
+
+    <div class="scroller">
+      <table class="cls">
+        <thead><tr><th>Prefix</th><th>Means</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>A</code></td><td>An <strong>Actor</strong>. Can be placed or spawned in a level, has a transform and a full lifecycle. <code>AActor</code>, <code>ACharacter</code>.</td></tr>
+          <tr data-row><td><code>U</code></td><td>A <strong>UObject</strong> that is not an Actor. Reflected and garbage-collected, but has no place in the world by itself. <code>UActorComponent</code>, <code>UGameInstance</code>.</td></tr>
+          <tr data-row><td><code>F</code></td><td>A plain struct or class with no reflection base. Copied by value, never garbage-collected. <code>FVector</code>, <code>FHitResult</code>.</td></tr>
+          <tr data-row><td><code>I</code></td><td>The C++ half of a <code>UInterface</code> / <code>IInterface</code> pair. <code>IAbilitySystemInterface</code>.</td></tr>
+          <tr data-row><td><code>E</code></td><td>An enum. <code>ECollisionChannel</code>, <code>ETriggerEvent</code>.</td></tr>
+          <tr data-row><td><code>T</code></td><td>A template. <code>TArray</code>, <code>TSubclassOf</code>, <code>TObjectPtr</code>.</td></tr>
+          <tr data-row><td><code>S</code></td><td>A Slate widget — the C++ UI framework the editor itself is built from. <code>SCompoundWidget</code>, <code>SButton</code>.</td></tr>
+          <tr data-row><td><code>G</code></td><td>Not a class prefix — a global pointer. <code>GEngine</code>, <code>GWorld</code>, <code>GEditor</code>.</td></tr>
+          <tr data-row><td><code>b</code></td><td>Not a class prefix — a boolean member. <code>bReplicates</code>, <code>bIsCrouched</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ CORE ============ -->
+  <section id="core" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">01 &nbsp;·&nbsp; The object model</div>
+      <h2>Core objects — what makes a class visible to the engine</h2>
+      <p class="sec-note">Everything the engine can save, garbage-collect, replicate or show to Blueprint descends from <code>UObject</code>. These classes are the reflection machinery; you rarely subclass them, but every bug about "my pointer became null" or "Blueprint can't see this" lives here.</p>
+    </div>
+
+    <div class="scroller">
+      <div class="tree">
+        <ul>
+          <li>
+            <div class="node"><span class="pfx pfx-u">U</span><code>UObject</code><span class="desc">Root of the reflected type system: garbage collection, serialization, replication, Blueprint exposure, <em>GetWorld()</em>, and the CDO (Class Default Object) that holds your constructor's values.</span><span></span></div>
+            <ul>
+              <li><div class="node"><span class="pfx pfx-u">U</span><code>UStruct</code><span class="desc">Anything that owns a property list.</span><span></span></div>
+                <ul>
+                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UClass</code><span class="desc">Runtime type info for a UObject class. What <em>StaticClass()</em>, <em>GetClass()</em> and <em>SpawnActor&lt;T&gt;</em> actually pass around.</span><span></span></div></li>
+                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UScriptStruct</code><span class="desc">Reflection for a <em>USTRUCT()</em> — lets a plain struct appear in Blueprint and replicate.</span><span></span></div></li>
+                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UFunction</code><span class="desc">Reflection for a <em>UFUNCTION()</em>. How Blueprint calls C++, and how RPCs are routed over the wire.</span><span></span></div></li>
+                </ul>
+              </li>
+              <li><div class="node"><span class="pfx pfx-u">F</span><code>FProperty</code><span class="desc">Reflection for a <em>UPROPERTY()</em>. Was <code>UProperty</code> before 4.25 — old tutorials still say the wrong name.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-u">U</span><code>UPackage</code><span class="desc">One <em>.uasset</em> file loaded into memory. The unit of save, load and cook.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-u">U</span><code>UBlueprint</code><span class="desc">The editor-only asset. At runtime you never touch it — you get its compiled <em>UBlueprintGeneratedClass</em>.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-u">U</span><code>UInterface</code><span class="desc">Declared as a <code>U…</code>/<code>I…</code> pair. A behavior contract shared by classes with no common ancestor.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-u">U</span><code>UEngine</code><span class="desc">Process root. <em>UGameEngine</em> in a packaged build, <em>UEditorEngine</em> in the editor. Reachable as <em>GEngine</em>.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-u">U</span><code>UGameViewportClient</code><span class="desc">The window the game renders into. Routes raw input to the right <em>ULocalPlayer</em>, owns split-screen layout.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-u">U</span><code>UDeveloperSettings</code><span class="desc">Subclass it and your properties appear in Project Settings automatically, backed by a config <em>.ini</em>.</span><span></span></div></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <figure class="ex">
+      <figcaption>A reflected class — the anatomy of every UCLASS you will write</figcaption>
+<pre><code class="language-cpp">UCLASS(BlueprintType)
+class MYGAME_API UItemDefinition : public UPrimaryDataAsset
+{
+    GENERATED_BODY()
+
+public:
+    // EditDefaultsOnly: designers set it on the asset, never per-instance
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item")
+    FText DisplayName;
+
+    // Soft pointer: stores a path, does NOT pull the mesh into memory
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item")
+    TSoftObjectPtr&lt;UStaticMesh&gt; WorldMesh;
+
+    // TObjectPtr is the modern form of a hard UObject* member
+    UPROPERTY(EditDefaultsOnly, Category = "Item")
+    TObjectPtr&lt;UTexture2D&gt; Icon;
+
+    // TSubclassOf is a type-checked UClass* — the editor only offers valid classes
+    UPROPERTY(EditDefaultsOnly, Category = "Item")
+    TSubclassOf&lt;AActor&gt; PickupActorClass;
+};</code></pre>
+    </figure>
+
+    <figure class="ex">
+      <figcaption>An interface — behavior without a shared base class</figcaption>
+<pre><code class="language-cpp">UINTERFACE(MinimalAPI, BlueprintType)
+class UInteractable : public UInterface { GENERATED_BODY() };
+
+class MYGAME_API IInteractable
+{
+    GENERATED_BODY()
+public:
+    // BlueprintNativeEvent: C++ default, overridable in Blueprint
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interaction")
+    void Interact(APlayerController* By);
+
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interaction")
+    FText GetPrompt() const;
+};
+
+// Calling it — note Execute_ prefix, and the U-prefixed type in Implements&lt;&gt;
+if (AActor* Hit = Result.GetActor(); Hit &amp;&amp; Hit-&gt;Implements&lt;UInteractable&gt;())
+{
+    IInteractable::Execute_Interact(Hit, PlayerController);
+}</code></pre>
+    </figure>
+  </section>
+
+  <!-- ============ WORLD ============ -->
+  <section id="world" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">02 &nbsp;·&nbsp; Containers</div>
+      <h2>World, levels and streaming</h2>
+      <p class="sec-note">A <code>UWorld</code> is the loaded map. It is destroyed and replaced on level travel — which is exactly why <code>UGameInstance</code> exists.</p>
+    </div>
+
+    <div class="scroller">
+      <table class="cls">
+        <thead><tr><th>Class</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>UWorld</code></td><td>The loaded map. Owns the actor list, the physics scene, <code>FTimerManager</code>, tick groups, and every trace and overlap query you will ever run.</td></tr>
+          <tr data-row><td><code>ULevel</code></td><td>One chunk of a world — the persistent level plus any sublevels. Owns an actor array and one <code>ALevelScriptActor</code>.</td></tr>
+          <tr data-row><td><code>ULevelStreaming</code></td><td>The load/visibility state of a sublevel. <code>ULevelStreamingDynamic</code> is the one you create at runtime.</td></tr>
+          <tr data-row><td><code>ALevelInstance</code></td><td>A whole level embedded as a single placeable, transformable actor. The modern replacement for copy-pasting prefab groups.</td></tr>
+          <tr data-row><td><code>APackedLevelActor</code></td><td>A LevelInstance baked down into merged instanced static meshes for cheap repetition.</td></tr>
+          <tr data-row><td><code>UWorldPartition</code></td><td>Automatic grid streaming for large worlds. Replaces hand-managed sublevels; brings HLOD proxies for distance.</td></tr>
+          <tr data-row><td><code>AWorldDataLayers</code> / <code>UDataLayerAsset</code></td><td>Toggleable content layers — day/night dressing, story states, gameplay-vs-editor-only actors.</td></tr>
+          <tr data-row><td><code>AWorldSettings</code></td><td>Per-map gravity, kill Z, world-to-meters, and a GameMode override for this map only.</td></tr>
+          <tr data-row><td><code>ALevelScriptActor</code></td><td>The Level Blueprint. One per level, for scripting that will never be reused anywhere else.</td></tr>
+          <tr data-row><td><code>ULevelSequence</code> / <code>ALevelSequenceActor</code></td><td>Sequencer cinematics — the asset and the actor that plays it. Drive it from C++ via <code>ULevelSequencePlayer</code>.</td></tr>
+          <tr data-row><td><code>UGameplayStatics::OpenLevel</code></td><td>The travel call that destroys the World and everything in it. Only <code>UGameInstance</code> survives.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="ex">
+      <figcaption>What you use UWorld for, day to day</figcaption>
+<pre><code class="language-cpp">// Trace. Ignore self, name the query so it shows in the profiler.
+FHitResult Hit;
+FCollisionQueryParams Params(SCENE_QUERY_STAT(Interact), /*bTraceComplex=*/false, this);
+const bool bHit = GetWorld()-&gt;LineTraceSingleByChannel(
+    Hit, Start, Start + Dir * 500.f, ECC_Visibility, Params);
+
+// Timer. Prefer this over ticking every frame for anything periodic.
+FTimerHandle RespawnHandle;
+GetWorld()-&gt;GetTimerManager().SetTimer(
+    RespawnHandle, this, &amp;AMyGameMode::RespawnPlayer, 5.f, /*bLoop=*/false);
+
+// Spawn, with explicit ownership so Server RPCs from it will be accepted.
+FActorSpawnParameters SpawnParams;
+SpawnParams.Owner      = this;
+SpawnParams.Instigator = GetInstigator();
+SpawnParams.SpawnCollisionHandlingOverride =
+    ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+AProjectile* P = GetWorld()-&gt;SpawnActor&lt;AProjectile&gt;(
+    ProjectileClass, MuzzleTransform, SpawnParams);</code></pre>
+    </figure>
+  </section>
+
+  <!-- ============ ACTORS ============ -->
+  <section id="actors" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">03 &nbsp;·&nbsp; Inheritance</div>
+      <h2>Actors — everything that can exist in a level</h2>
+      <p class="sec-note">An Actor is a container with a transform and a lifecycle. It does almost nothing by itself; its components do the work. If you find yourself writing a deep Actor inheritance chain, that logic wanted to be a component.</p>
+    </div>
+
+    <div class="scroller">
+      <div class="tree">
+        <ul>
+          <li>
+            <div class="node"><span class="pfx pfx-a">A</span><code>AActor</code><span class="desc">Placeable and spawnable. Owns components, replicates, and runs <em>BeginPlay / Tick / EndPlay / Destroyed</em>.</span><span></span></div>
+            <ul>
+              <li>
+                <div class="node"><span class="pfx pfx-a">A</span><code>APawn</code><span class="desc">The <strong>body</strong>. An Actor a Controller can possess; accepts input and has a view rotation.</span><span class="badge b-rep">replicated to all</span></div>
+                <ul>
+                  <li><div class="node"><span class="pfx pfx-a">A</span><code>ACharacter</code><span class="desc">Pawn + capsule + <em>UCharacterMovementComponent</em> + skeletal mesh. Walk, jump, crouch, swim, with network prediction already solved.</span><span></span></div></li>
+                  <li><div class="node"><span class="pfx pfx-a">A</span><code>ADefaultPawn</code><span class="desc">Flying debug pawn, input and movement pre-wired.</span><span></span></div></li>
+                  <li><div class="node"><span class="pfx pfx-a">A</span><code>ASpectatorPawn</code><span class="desc">Collisionless observer used between respawns and in spectator mode.</span><span></span></div></li>
+                </ul>
+              </li>
+              <li>
+                <div class="node"><span class="pfx pfx-a">A</span><code>AController</code><span class="desc">The <strong>will</strong>. Non-physical; possesses a Pawn and outlives it.</span><span></span></div>
+                <ul>
+                  <li><div class="node"><span class="pfx pfx-a">A</span><code>APlayerController</code><span class="desc">A human's will: input, UI focus, respawn requests, client&#8596;server RPCs.</span><span class="badge b-loc">local client only</span></div></li>
+                  <li><div class="node"><span class="pfx pfx-a">A</span><code>AAIController</code><span class="desc">A simulated will: behavior tree, blackboard, perception, pathfinding.</span><span class="badge b-srv">server only</span></div></li>
+                </ul>
+              </li>
+              <li>
+                <div class="node"><span class="pfx pfx-a">A</span><code>AInfo</code><span class="desc">An Actor with no transform and nothing to render — a pure manager. Every framework "brain" lives here.</span><span></span></div>
+                <ul>
+                  <li><div class="node"><span class="pfx pfx-a">A</span><code>AGameModeBase</code><span class="desc">The rules. Spawned first on level load and spawns the rest of the framework.</span><span class="badge b-srv">server only</span></div></li>
+                  <li><div class="node"><span class="pfx pfx-a">A</span><code>AGameMode</code><span class="desc">Adds a match state machine — <em>WaitingToStart / InProgress / WaitingPostMatch</em>.</span><span class="badge b-srv">server only</span></div></li>
+                  <li><div class="node"><span class="pfx pfx-a">A</span><code>AGameStateBase</code><span class="desc">Match state everyone must see, plus the array of every <em>APlayerState</em>.</span><span class="badge b-rep">replicated to all</span></div></li>
+                  <li><div class="node"><span class="pfx pfx-a">A</span><code>APlayerState</code><span class="desc">One participant's state. Survives the Pawn dying.</span><span class="badge b-rep">replicated to all</span></div></li>
+                  <li><div class="node"><span class="pfx pfx-a">A</span><code>AGameSession</code><span class="desc">Login approval, max player count, kick/ban, online session registration.</span><span class="badge b-srv">server only</span></div></li>
+                  <li><div class="node"><span class="pfx pfx-a">A</span><code>AGameNetworkManager</code><span class="desc">Movement error tolerances and speed-hack thresholds — the anti-cheat dials.</span><span class="badge b-srv">server only</span></div></li>
+                  <li><div class="node"><span class="pfx pfx-a">A</span><code>AWorldSettings</code><span class="desc">Per-map gravity, kill Z, GameMode override.</span><span></span></div></li>
+                </ul>
+              </li>
+              <li><div class="node"><span class="pfx pfx-a">A</span><code>AHUD</code><span class="desc">Per-player immediate-mode canvas drawing. In modern UE this is debug overlays only — real UI is UMG.</span><span class="badge b-loc">local client only</span></div></li>
+              <li><div class="node"><span class="pfx pfx-a">A</span><code>APlayerCameraManager</code><span class="desc">Computes the final view each frame: blends, fades, camera shakes, post-process overrides.</span><span class="badge b-loc">local client only</span></div></li>
+              <li>
+                <div class="node"><span class="pfx pfx-a">A</span><code>AVolume</code><span class="desc">A shape with no visual.</span><span></span></div>
+                <ul>
+                  <li><div class="node"><span class="pfx pfx-a">A</span><code>ATriggerVolume</code><span class="desc">Fires overlap events. Siblings: <em>ATriggerBox</em>, <em>ATriggerSphere</em>, <em>ATriggerCapsule</em>.</span><span></span></div></li>
+                  <li><div class="node"><span class="pfx pfx-a">A</span><code>ABlockingVolume</code><span class="desc">Invisible collision — keeps players out of geometry gaps.</span><span></span></div></li>
+                  <li><div class="node"><span class="pfx pfx-a">A</span><code>APostProcessVolume</code><span class="desc">Localised post-process settings with a blend radius.</span><span></span></div></li>
+                  <li><div class="node"><span class="pfx pfx-a">A</span><code>APhysicsVolume</code><span class="desc">Overrides gravity, friction and water state inside its bounds.</span><span></span></div></li>
+                  <li><div class="node"><span class="pfx pfx-a">A</span><code>ANavMeshBoundsVolume</code><span class="desc">Where navmesh gets built. Sibling: <em>ANavModifierVolume</em> for cost and area overrides.</span><span></span></div></li>
+                </ul>
+              </li>
+              <li><div class="node"><span class="pfx pfx-a">A</span><code>APlayerStart</code><span class="desc">A tagged spawn transform the GameMode picks from in <em>ChoosePlayerStart</em>.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-a">A</span><code>AStaticMeshActor</code><span class="desc">Thin wrapper around one component. Siblings: <em>ASkeletalMeshActor</em>, <em>ADecalActor</em>, <em>AEmitter</em>, <em>ANiagaraActor</em>, <em>AAmbientSound</em>.</span><span></span></div></li>
+              <li>
+                <div class="node"><span class="pfx pfx-a">A</span><code>ALight</code><span class="desc">Light actors.</span><span></span></div>
+                <ul>
+                  <li><div class="node"><span class="pfx pfx-a">A</span><code>ADirectionalLight</code><span class="desc">Sun. Siblings: <em>APointLight</em>, <em>ASpotLight</em>, <em>ARectLight</em>, <em>ASkyLight</em>.</span><span></span></div></li>
+                </ul>
+              </li>
+              <li><div class="node"><span class="pfx pfx-a">A</span><code>ACameraActor</code><span class="desc">A placeable view point. <em>ACineCameraActor</em> adds real lens, focus and aperture controls.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-a">A</span><code>ARecastNavMesh</code><span class="desc">The generated navigation mesh asset-actor the AI paths on.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-a">A</span><code>ALandscape</code><span class="desc">Heightfield terrain. <em>ALandscapeProxy</em> is one streamed piece of it.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-a">A</span><code>AInstancedFoliageActor</code><span class="desc">Holds every painted foliage instance for a level.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-a">A</span><code>ALevelScriptActor</code><span class="desc">The Level Blueprint.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-a">A</span><code>ASkyAtmosphere</code><span class="desc">Physical sky. Siblings: <em>AExponentialHeightFog</em>, <em>AVolumetricCloud</em>, <em>ASphereReflectionCapture</em>.</span><span></span></div></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <figure class="ex">
+      <figcaption>The AActor members you will reach for constantly</figcaption>
+<pre><code class="language-cpp">// Authority — the single most important question in multiplayer code
+if (HasAuthority()) { /* server-only gameplay */ }
+
+// Lifetime
+SetLifeSpan(3.f);            // auto-destroy after 3 seconds
+Destroy();                   // immediate
+
+// Ownership drives RPC permission and relevancy
+SetOwner(PlayerController);
+
+// Attachment
+AttachToActor(Parent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+Mesh-&gt;AttachToComponent(GetMesh(), Rules, TEXT("hand_r_socket"));
+
+// Components
+TArray&lt;UStaticMeshComponent*&gt; Meshes;
+GetComponents&lt;UStaticMeshComponent&gt;(Meshes);
+UHealthComponent* Health = FindComponentByClass&lt;UHealthComponent&gt;();
+
+// Ticking off by default is the cheapest optimisation in the engine
+PrimaryActorTick.bCanEverTick = false;</code></pre>
+    </figure>
+  </section>
+
+  <!-- ============ COMPONENTS ============ -->
+  <section id="components" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">04 &nbsp;·&nbsp; Inheritance</div>
+      <h2>Components — where most of your code should end up</h2>
+      <p class="sec-note">Three tiers, and the difference matters: <code>UActorComponent</code> has no transform, <code>USceneComponent</code> adds one and can be attached, <code>UPrimitiveComponent</code> adds geometry so it renders and collides. Pick the shallowest tier that does the job.</p>
+    </div>
+
+    <div class="scroller">
+      <div class="tree">
+        <ul>
+          <li>
+            <div class="node"><span class="pfx pfx-u">U</span><code>UActorComponent</code><span class="desc">Reusable behavior bolted onto an Actor. No transform. Ticks, replicates, and can be added by Blueprint or at runtime.</span><span></span></div>
+            <ul>
+              <li>
+                <div class="node"><span class="pfx pfx-u">U</span><code>USceneComponent</code><span class="desc">Adds a transform. Can attach to a parent and to sockets; forms the actor's component tree.</span><span></span></div>
+                <ul>
+                  <li>
+                    <div class="node"><span class="pfx pfx-u">U</span><code>UPrimitiveComponent</code><span class="desc">Adds geometry, so it renders and collides. <strong>All collision, overlap and hit events originate here.</strong> Owns an <em>FBodyInstance</em>.</span><span></span></div>
+                    <ul>
+                      <li>
+                        <div class="node"><span class="pfx pfx-u">U</span><code>UMeshComponent</code><span class="desc">Anything with materials.</span><span></span></div>
+                        <ul>
+                          <li><div class="node"><span class="pfx pfx-u">U</span><code>UStaticMeshComponent</code><span class="desc">Rigid geometry.</span><span></span></div>
+                            <ul>
+                              <li><div class="node"><span class="pfx pfx-u">U</span><code>UInstancedStaticMeshComponent</code><span class="desc">Many copies, one draw call. <em>UHierarchicalInstancedStaticMeshComponent</em> adds LOD and culling per instance — what foliage uses.</span><span></span></div></li>
+                              <li><div class="node"><span class="pfx pfx-u">U</span><code>USplineMeshComponent</code><span class="desc">A mesh deformed along a spline — roads, cables, pipes.</span><span></span></div></li>
+                            </ul>
+                          </li>
+                          <li><div class="node"><span class="pfx pfx-u">U</span><code>USkinnedMeshComponent</code><span class="desc">Skinned geometry.</span><span></span></div>
+                            <ul>
+                              <li><div class="node"><span class="pfx pfx-u">U</span><code>USkeletalMeshComponent</code><span class="desc">Skinned mesh + an <em>UAnimInstance</em> + optional physics asset for ragdoll. The single busiest component in most games.</span><span></span></div></li>
+                            </ul>
+                          </li>
+                          <li><div class="node"><span class="pfx pfx-u">U</span><code>UProceduralMeshComponent</code><span class="desc">Runtime-built geometry. <em>UDynamicMeshComponent</em> is the newer GeometryScript-friendly one.</span><span></span></div></li>
+                        </ul>
+                      </li>
+                      <li>
+                        <div class="node"><span class="pfx pfx-u">U</span><code>UShapeComponent</code><span class="desc">Invisible collision primitives — the cheapest colliders available.</span><span></span></div>
+                        <ul>
+                          <li><div class="node"><span class="pfx pfx-u">U</span><code>UCapsuleComponent</code><span class="desc">The Character's root collider. Siblings: <em>UBoxComponent</em>, <em>USphereComponent</em>.</span><span></span></div></li>
+                        </ul>
+                      </li>
+                      <li><div class="node"><span class="pfx pfx-u">U</span><code>USplineComponent</code><span class="desc">A path in space. Query points, tangents and distances along it.</span><span></span></div></li>
+                      <li><div class="node"><span class="pfx pfx-u">U</span><code>UWidgetComponent</code><span class="desc">A UMG widget rendered in the 3D world — nameplates, world-space UI.</span><span></span></div></li>
+                      <li><div class="node"><span class="pfx pfx-u">U</span><code>UNiagaraComponent</code><span class="desc">A running VFX system instance.</span><span></span></div></li>
+                      <li><div class="node"><span class="pfx pfx-u">U</span><code>UArrowComponent</code><span class="desc">Editor-only gizmo. Sibling: <em>UBillboardComponent</em>.</span><span></span></div></li>
+                    </ul>
+                  </li>
+                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UCameraComponent</code><span class="desc">A view point. <em>UCineCameraComponent</em> adds lens, focus, aperture.</span><span></span></div></li>
+                  <li><div class="node"><span class="pfx pfx-u">U</span><code>USpringArmComponent</code><span class="desc">A collision-aware camera boom with lag. The third-person camera in one component.</span><span></span></div></li>
+                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UAudioComponent</code><span class="desc">A positioned, controllable sound instance — pause, fade, set parameters.</span><span></span></div></li>
+                  <li><div class="node"><span class="pfx pfx-u">U</span><code>ULightComponentBase</code><span class="desc">→ <em>ULightComponent</em> → <em>UDirectionalLightComponent</em>, <em>UPointLightComponent</em> → <em>USpotLightComponent</em>, <em>URectLightComponent</em>; <em>USkyLightComponent</em>.</span><span></span></div></li>
+                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UDecalComponent</code><span class="desc">Projects a material onto surfaces — bullet holes, blood, tyre marks.</span><span></span></div></li>
+                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UPostProcessComponent</code><span class="desc">Post-process settings attached to an actor rather than a volume.</span><span></span></div></li>
+                  <li><div class="node"><span class="pfx pfx-u">U</span><code>USceneCaptureComponent2D</code><span class="desc">Renders the scene into a <em>UTextureRenderTarget2D</em> — mirrors, security cameras, portals, data bakes.</span><span></span></div></li>
+                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UChildActorComponent</code><span class="desc">Spawns and owns a whole Actor as a component. Convenient, and a common source of surprise costs.</span><span></span></div></li>
+                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UPhysicsConstraintComponent</code><span class="desc">A joint between two physics bodies — hinges, ropes, ragdoll limits.</span><span></span></div></li>
+                </ul>
+              </li>
+              <li>
+                <div class="node"><span class="pfx pfx-u">U</span><code>UMovementComponent</code><span class="desc">Moves an <em>UpdatedComponent</em>; renders nothing itself.</span><span></span></div>
+                <ul>
+                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UNavMovementComponent</code><span class="desc">→ <em>UPawnMovementComponent</em>, the base for anything a Controller drives.</span><span></span></div>
+                    <ul>
+                      <li><div class="node"><span class="pfx pfx-u">U</span><code>UCharacterMovementComponent</code><span class="desc">Movement modes, root motion, crouching, and full client-side prediction with server correction. The largest class most projects ever touch.</span><span></span></div></li>
+                      <li><div class="node"><span class="pfx pfx-u">U</span><code>UFloatingPawnMovement</code><span class="desc">Simple fly/hover movement with no gravity.</span><span></span></div></li>
+                    </ul>
+                  </li>
+                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UProjectileMovementComponent</code><span class="desc">Ballistic, homing and bouncing motion.</span><span></span></div></li>
+                  <li><div class="node"><span class="pfx pfx-u">U</span><code>URotatingMovementComponent</code><span class="desc">Constant spin with no physics cost.</span><span></span></div></li>
+                </ul>
+              </li>
+              <li><div class="node"><span class="pfx pfx-u">U</span><code>UInputComponent</code><span class="desc">Binds input to functions. <em>UEnhancedInputComponent</em> is the current one.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-u">U</span><code>UBrainComponent</code><span class="desc">→ <em>UBehaviorTreeComponent</em>, the AI's running logic.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-u">U</span><code>UBlackboardComponent</code><span class="desc">The AI's key/value working memory.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-u">U</span><code>UAIPerceptionComponent</code><span class="desc">Sight, hearing and damage senses; reports stimuli to the controller.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-u">U</span><code>UPathFollowingComponent</code><span class="desc">Walks a computed path. <em>UCrowdFollowingComponent</em> adds avoidance.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-u">U</span><code>UAbilitySystemComponent</code><span class="desc">The GAS bridge — abilities, effects, attributes, tags.</span><span class="badge b-plug">plugin</span></div></li>
+              <li><div class="node"><span class="pfx pfx-u">U</span><code>UTimelineComponent</code><span class="desc">The C++ side of a Blueprint Timeline — curve-driven values over time.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-u">U</span><code>UPhysicsHandleComponent</code><span class="desc">Grab and drag a physics body — the gravity-gun component.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-u">U</span><code>URadialForceComponent</code><span class="desc">Explosion impulses and radial damage falloff.</span><span></span></div></li>
+              <li><div class="node"><span class="pfx pfx-u">U</span><code>UPCGComponent</code><span class="desc">Runs a PCG graph using this actor's bounds as input.</span><span class="badge b-plug">plugin</span></div></li>
+              <li><div class="node"><span class="pfx pfx-u">U</span><code>UStateTreeComponent</code><span class="desc">Runs a StateTree on this actor — the newer alternative to a behavior tree.</span><span class="badge b-plug">plugin</span></div></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <figure class="ex">
+      <figcaption>UHealthComponent — the shape almost every gameplay component takes</figcaption>
+<pre><code class="language-cpp">DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
+    FOnHealthChanged, float, NewHealth, float, Delta);
+
+UCLASS(ClassGroup = (Gameplay), meta = (BlueprintSpawnableComponent))
+class MYGAME_API UHealthComponent : public UActorComponent
+{
+    GENERATED_BODY()
+
+public:
+    UHealthComponent();
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Health")
+    float MaxHealth = 100.f;
+
+    UPROPERTY(ReplicatedUsing = OnRep_Health, BlueprintReadOnly, Category = "Health")
+    float Health = 100.f;
+
+    // BlueprintAssignable = designers can bind this in the widget or the BP
+    UPROPERTY(BlueprintAssignable, Category = "Health")
+    FOnHealthChanged OnHealthChanged;
+
+    UFUNCTION(BlueprintCallable, Category = "Health")
+    void ApplyDamage(float Amount, AController* Instigator);
+
+protected:
+    virtual void BeginPlay() override;
+    virtual void GetLifetimeReplicatedProps(TArray&lt;FLifetimeProperty&gt;&amp; Out) const override;
+
+    UFUNCTION()
+    void OnRep_Health(float OldHealth);
+};</code></pre>
+    </figure>
+
+    <figure class="ex">
+      <figcaption>…and its implementation — note the authority guard and the OnRep split</figcaption>
+<pre><code class="language-cpp">UHealthComponent::UHealthComponent()
+{
+    PrimaryComponentTick.bCanEverTick = false;   // nothing to do per frame
+    SetIsReplicatedByDefault(true);              // required, or nothing replicates
+}
+
+void UHealthComponent::ApplyDamage(float Amount, AController* Instigator)
+{
+    // Only the server decides. A client calling this does nothing.
+    if (!GetOwner()-&gt;HasAuthority() || Health &lt;= 0.f) return;
+
+    const float Old = Health;
+    Health = FMath::Clamp(Health - Amount, 0.f, MaxHealth);
+
+    // Server fires it directly; clients get it through OnRep_Health.
+    OnHealthChanged.Broadcast(Health, Health - Old);
+
+    if (Health &lt;= 0.f)
+    {
+        if (AMyGameMode* GM = GetWorld()-&gt;GetAuthGameMode&lt;AMyGameMode&gt;())
+            GM-&gt;OnActorKilled(GetOwner(), Instigator);
+    }
+}
+
+void UHealthComponent::OnRep_Health(float OldHealth)
+{
+    OnHealthChanged.Broadcast(Health, Health - OldHealth);   // client-side reaction
+}
+
+void UHealthComponent::GetLifetimeReplicatedProps(TArray&lt;FLifetimeProperty&gt;&amp; Out) const
+{
+    Super::GetLifetimeReplicatedProps(Out);
+    DOREPLIFETIME(UHealthComponent, Health);
+}</code></pre>
+    </figure>
+  </section>
+
+  <!-- ============ FRAMEWORK ============ -->
+  <section id="framework" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">05 &nbsp;·&nbsp; Ownership</div>
+      <h2>The framework eight — who spawns whom</h2>
+      <p class="sec-note">Indentation here means "is created and owned by", not "inherits from". This is the tree that decides your architecture: a class can only reach what sits above or beside it.</p>
+    </div>
+
+    <div class="scroller">
+      <div class="tree">
+        <ul>
+          <li>
+            <div class="node"><span class="pfx pfx-u">U</span><code>UGameEngine</code><span class="desc">The process.</span><span></span></div>
+            <ul>
+              <li>
+                <div class="node"><span class="pfx pfx-u">U</span><code>UGameInstance</code><span class="desc">One per process — the server has one, every client has its own. Never replicated. <strong>The only gameplay object that survives level travel.</strong></span><span class="badge b-none">per machine</span></div>
+                <ul>
+                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UGameInstanceSubsystem</code><span class="desc">Settings, save data, audio state, account session — anything that must outlive the map.</span><span></span></div></li>
+                  <li>
+                    <div class="node"><span class="pfx pfx-u">U</span><code>ULocalPlayer</code><span class="desc">A human seated at <em>this</em> machine — one per split-screen player. Owns the viewport slot.</span><span class="badge b-loc">local client only</span></div>
+                    <ul>
+                      <li><div class="node"><span class="pfx pfx-u">U</span><code>ULocalPlayerSubsystem</code><span class="desc">Input mapping contexts, UI layer stack, per-seat preferences.</span><span></span></div></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <div class="node"><span class="pfx pfx-u">U</span><code>UWorld</code><span class="desc">The currently loaded map. Replaced wholesale on level travel.</span><span></span></div>
+                    <ul>
+                      <li><div class="node"><span class="pfx pfx-u">U</span><code>UWorldSubsystem</code><span class="desc">Managers scoped to this map only — wave director, weather, spawn budget.</span><span></span></div></li>
+                      <li><div class="node"><span class="pfx pfx-a">A</span><code>AGameModeBase</code><span class="desc">Spawned first, then spawns everything below it.</span><span class="badge b-srv">server only</span></div></li>
+                      <li><div class="node"><span class="pfx pfx-a">A</span><code>AGameStateBase</code><span class="desc">Spawned by the GameMode from its <em>GameStateClass</em>. Holds <em>PlayerArray</em>.</span><span class="badge b-rep">replicated to all</span></div></li>
+                      <li>
+                        <div class="node"><span class="pfx pfx-a">A</span><code>APlayerController</code><span class="desc">One per human. Lives on the server and on that human's own client — client A can never see client B's.</span><span class="badge b-loc">local client only</span></div>
+                        <ul>
+                          <li><div class="node"><span class="pfx pfx-a">A</span><code>APlayerState</code><span class="desc">Spawned alongside the controller — but visible on <em>every</em> machine.</span><span class="badge b-rep">replicated to all</span></div></li>
+                          <li><div class="node"><span class="pfx pfx-a">A</span><code>AHUD</code><span class="desc">Canvas drawing surface.</span><span class="badge b-loc">local client only</span></div></li>
+                          <li><div class="node"><span class="pfx pfx-a">A</span><code>APlayerCameraManager</code><span class="desc">The final view for this player.</span><span class="badge b-loc">local client only</span></div></li>
+                          <li><div class="node"><span class="pfx pfx-u">U</span><code>UUserWidget</code><span class="desc">The widget stack this player is looking at.</span><span class="badge b-loc">local client only</span></div></li>
+                          <li><div class="node"><span class="pfx pfx-a">A</span><code>APawn</code><span class="desc">The possessed body. Destroyed on death, re-possessed on respawn.</span><span class="badge b-rep">replicated to all</span></div></li>
+                        </ul>
+                      </li>
+                      <li>
+                        <div class="node"><span class="pfx pfx-a">A</span><code>AAIController</code><span class="desc">One per bot, from the Pawn's <em>AutoPossessAI</em> setting or spawned by hand.</span><span class="badge b-srv">server only</span></div>
+                        <ul>
+                          <li><div class="node"><span class="pfx pfx-a">A</span><code>APawn</code><span class="desc">The bot's body — usually the same Pawn class a human drives.</span><span class="badge b-rep">replicated to all</span></div></li>
+                        </ul>
+                      </li>
+                      <li>
+                        <div class="node"><span class="pfx pfx-a">A</span><code>AActor</code><span class="desc">Everything else: pickups, doors, spawners, volumes.</span><span></span></div>
+                        <ul>
+                          <li><div class="node"><span class="pfx pfx-u">U</span><code>UActorComponent</code><span class="desc">Health, inventory, interaction, abilities — behavior shared by actors that share no base class.</span><span></span></div></li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <figure class="ex">
+      <figcaption>GameMode — rules, and nothing a client needs to read</figcaption>
+<pre><code class="language-cpp">// Called by the framework to place each spawning player
+AActor* AMyGameMode::ChoosePlayerStart_Implementation(AController* Player)
+{
+    TArray&lt;AActor*&gt; Starts;
+    UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), Starts);
+
+    // Prefer the start furthest from any living enemy
+    Starts.Sort([this](const AActor&amp; A, const AActor&amp; B) {
+        return DistanceToNearestEnemy(A.GetActorLocation())
+             &gt; DistanceToNearestEnemy(B.GetActorLocation());
+    });
+    return Starts.Num() ? Starts[0] : Super::ChoosePlayerStart_Implementation(Player);
+}
+
+void AMyGameMode::OnActorKilled(AActor* Victim, AController* Killer)
+{
+    check(HasAuthority());   // this class only ever exists on the server
+
+    // The GameMode decides; the states publish.
+    if (AMyPlayerState* PS = Killer ? Killer-&gt;GetPlayerState&lt;AMyPlayerState&gt;() : nullptr)
+        PS-&gt;AddScore(100);
+
+    if (AMyGameState* GS = GetGameState&lt;AMyGameState&gt;())
+        GS-&gt;RegisterKill();
+
+    FTimerHandle H;
+    FTimerDelegate D = FTimerDelegate::CreateUObject(
+        this, &amp;AMyGameMode::RestartPlayer, Victim-&gt;GetInstigatorController());
+    GetWorldTimerManager().SetTimer(H, D, RespawnDelay, false);
+}</code></pre>
+    </figure>
+
+    <figure class="ex">
+      <figcaption>GameState and PlayerState — the replicated halves</figcaption>
+<pre><code class="language-cpp">UCLASS()
+class AMyGameState : public AGameStateBase
+{
+    GENERATED_BODY()
+public:
+    UPROPERTY(ReplicatedUsing = OnRep_Phase, BlueprintReadOnly, Category = "Match")
+    EMatchPhase Phase = EMatchPhase::Warmup;
+
+    UPROPERTY(Replicated, BlueprintReadOnly, Category = "Match")
+    int32 TeamScores[2] = { 0, 0 };
+
+    // Inherited and already replicated for you:
+    //   TArray&lt;TObjectPtr&lt;APlayerState&gt;&gt; PlayerArray;
+};
+
+UCLASS()
+class AMyPlayerState : public APlayerState
+{
+    GENERATED_BODY()
+public:
+    UPROPERTY(Replicated, BlueprintReadOnly, Category = "Stats")
+    int32 Kills = 0;
+
+    UPROPERTY(Replicated, BlueprintReadOnly, Category = "Stats")
+    uint8 TeamId = 0;
+
+    // CopyProperties survives seamless travel and respawn
+    virtual void CopyProperties(APlayerState* New) override
+    {
+        Super::CopyProperties(New);
+        if (auto* P = Cast&lt;AMyPlayerState&gt;(New)) { P-&gt;Kills = Kills; P-&gt;TeamId = TeamId; }
+    }
+};</code></pre>
+    </figure>
+  </section>
+
+  <!-- ============ SUBSYSTEMS ============ -->
+  <section id="subsystems" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">06 &nbsp;·&nbsp; Managers</div>
+      <h2>Subsystems — singletons with a defined lifetime</h2>
+      <p class="sec-note">The modern replacement for manager actors, static globals and "put it on the GameInstance". Pick the type by asking how long it should live.</p>
+    </div>
+
+    <div class="scroller">
+      <table class="cls">
+        <thead><tr><th>Class</th><th>Lifetime</th><th>Get it with</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>UEngineSubsystem</code></td><td>The whole engine module.</td><td><code>GEngine-&gt;GetEngineSubsystem&lt;T&gt;()</code></td></tr>
+          <tr data-row><td><code>UEditorSubsystem</code></td><td>The editor session. Never shipped.</td><td><code>GEditor-&gt;GetEditorSubsystem&lt;T&gt;()</code></td></tr>
+          <tr data-row><td><code>UGameInstanceSubsystem</code></td><td>The GameInstance. <strong>Survives level travel.</strong></td><td><code>GetGameInstance()-&gt;GetSubsystem&lt;T&gt;()</code></td></tr>
+          <tr data-row><td><code>UWorldSubsystem</code></td><td>The current World. Dies on travel.</td><td><code>GetWorld()-&gt;GetSubsystem&lt;T&gt;()</code></td></tr>
+          <tr data-row><td><code>ULocalPlayerSubsystem</code></td><td>One per local player.</td><td><code>ULocalPlayer::GetSubsystem&lt;T&gt;(LP)</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="ex">
+      <figcaption>A world subsystem that only exists on the server</figcaption>
+<pre><code class="language-cpp">UCLASS()
+class MYGAME_API UWaveDirectorSubsystem : public UWorldSubsystem
+{
+    GENERATED_BODY()
+
+public:
+    // Skip creating it entirely on clients and in editor preview worlds
+    virtual bool ShouldCreateSubsystem(UObject* Outer) const override
+    {
+        const UWorld* W = Cast&lt;UWorld&gt;(Outer);
+        return W &amp;&amp; W-&gt;IsGameWorld() &amp;&amp; W-&gt;GetNetMode() != NM_Client;
+    }
+
+    virtual void Initialize(FSubsystemCollectionBase&amp; Collection) override
+    {
+        Super::Initialize(Collection);
+        // Depend on another subsystem? Ask for it here and it is created first.
+        Collection.InitializeDependency&lt;USpawnBudgetSubsystem&gt;();
+    }
+
+    virtual void OnWorldBeginPlay(UWorld&amp; World) override   // actors exist by now
+    {
+        StartWave(1);
+    }
+
+    virtual void Deinitialize() override { GetWorld()-&gt;GetTimerManager().ClearAllTimersForObject(this); }
+
+    UFUNCTION(BlueprintCallable, Category = "Waves")
+    void StartWave(int32 Index);
+};
+
+// Reaching it from anywhere with a world context
+UWaveDirectorSubsystem* Waves = GetWorld()-&gt;GetSubsystem&lt;UWaveDirectorSubsystem&gt;();</code></pre>
+    </figure>
+  </section>
+
+  <!-- ============ INPUT ============ -->
+  <section id="input" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">07 &nbsp;·&nbsp; Enhanced Input</div>
+      <h2>Input — assets, not hardcoded key names</h2>
+      <p class="sec-note">The old <code>UPlayerInput</code> axis/action mappings still work but are legacy. Enhanced Input replaces them with assets you can swap at runtime, which is what makes context-sensitive controls and rebinding tractable.</p>
+    </div>
+
+    <div class="scroller">
+      <table class="cls">
+        <thead><tr><th>Class</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>UInputAction</code></td><td>An asset naming one thing the player can do — "Move", "Jump", "Fire" — with a value type: bool, 1D axis, 2D axis or 3D.</td></tr>
+          <tr data-row><td><code>UInputMappingContext</code></td><td>An asset mapping keys to actions, with modifiers and triggers per key. Swap contexts to change what the controls mean (on foot / in vehicle / in menu).</td></tr>
+          <tr data-row><td><code>UEnhancedInputComponent</code></td><td>Binds an action + trigger event to one of your functions. Lives on the Pawn or the PlayerController.</td></tr>
+          <tr data-row><td><code>UEnhancedInputLocalPlayerSubsystem</code></td><td>Where you add and remove mapping contexts at runtime, with priorities.</td></tr>
+          <tr data-row><td><code>UInputModifier</code></td><td>Pre-processes the raw value: dead zone, negate, swizzle axes, scale, smooth.</td></tr>
+          <tr data-row><td><code>UInputTrigger</code></td><td>Decides <em>when</em> the action fires: Down, Pressed, Released, Hold, Tap, Chorded.</td></tr>
+          <tr data-row><td><code>FInputActionValue</code></td><td>The value delivered to your handler. <code>Get&lt;bool&gt;()</code>, <code>Get&lt;float&gt;()</code>, <code>Get&lt;FVector2D&gt;()</code>.</td></tr>
+          <tr data-row><td><code>ETriggerEvent</code></td><td>Started / Triggered / Ongoing / Completed / Canceled — pick deliberately, they are not interchangeable.</td></tr>
+          <tr data-row><td><code>UEnhancedInputUserSettings</code></td><td>Player-facing key rebinding, saved per user.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="ex">
+      <figcaption>Wiring Enhanced Input on a Character, start to finish</figcaption>
+<pre><code class="language-cpp">// 1. Register the mapping context. PawnClientRestart runs on the owning client
+//    once the pawn is possessed — the correct place, not BeginPlay.
+void AMyCharacter::PawnClientRestart()
+{
+    Super::PawnClientRestart();
+
+    if (APlayerController* PC = Cast&lt;APlayerController&gt;(Controller))
+    {
+        if (auto* Sub = ULocalPlayer::GetSubsystem&lt;UEnhancedInputLocalPlayerSubsystem&gt;(
+                PC-&gt;GetLocalPlayer()))
+        {
+            Sub-&gt;ClearAllMappings();
+            Sub-&gt;AddMappingContext(DefaultContext, /*Priority=*/0);
+        }
+    }
+}
+
+// 2. Bind actions to functions.
+void AMyCharacter::SetupPlayerInputComponent(UInputComponent* Input)
+{
+    Super::SetupPlayerInputComponent(Input);
+    UEnhancedInputComponent* EIC = CastChecked&lt;UEnhancedInputComponent&gt;(Input);
+
+    EIC-&gt;BindAction(MoveAction,  ETriggerEvent::Triggered, this, &amp;AMyCharacter::Move);
+    EIC-&gt;BindAction(LookAction,  ETriggerEvent::Triggered, this, &amp;AMyCharacter::Look);
+    EIC-&gt;BindAction(JumpAction,  ETriggerEvent::Started,   this, &amp;ACharacter::Jump);
+    EIC-&gt;BindAction(JumpAction,  ETriggerEvent::Completed, this, &amp;ACharacter::StopJumping);
+    EIC-&gt;BindAction(FireAction,  ETriggerEvent::Started,   this, &amp;AMyCharacter::StartFire);
+}
+
+// 3. Handle it. Movement is camera-relative but yaw-only, so looking up
+//    does not slow you down.
+void AMyCharacter::Move(const FInputActionValue&amp; Value)
+{
+    const FVector2D Axis = Value.Get&lt;FVector2D&gt;();
+    if (!Controller || Axis.IsNearlyZero()) return;
+
+    const FRotator YawOnly(0.f, Controller-&gt;GetControlRotation().Yaw, 0.f);
+    const FRotationMatrix M(YawOnly);
+
+    AddMovementInput(M.GetUnitAxis(EAxis::X), Axis.Y);   // forward
+    AddMovementInput(M.GetUnitAxis(EAxis::Y), Axis.X);   // strafe
+}
+
+// 4. Context switching — this is the whole point of mapping contexts.
+void AMyCharacter::EnterVehicle()
+{
+    if (auto* Sub = ULocalPlayer::GetSubsystem&lt;UEnhancedInputLocalPlayerSubsystem&gt;(
+            GetController&lt;APlayerController&gt;()-&gt;GetLocalPlayer()))
+    {
+        Sub-&gt;RemoveMappingContext(DefaultContext);
+        Sub-&gt;AddMappingContext(VehicleContext, /*Priority=*/1);
+    }
+}</code></pre>
+    </figure>
+  </section>
+
+  <!-- ============ AI ============ -->
+  <section id="ai" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">08 &nbsp;·&nbsp; Artificial intelligence</div>
+      <h2>AI — will, memory, perception, navigation</h2>
+      <p class="sec-note">The split mirrors the player: <code>AAIController</code> is the will and the Pawn is the body. Everything below hangs off the controller.</p>
+    </div>
+
+    <div class="scroller">
+      <table class="cls">
+        <thead><tr><th>Class</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>AAIController</code></td><td>The bot's will. <code>RunBehaviorTree()</code>, <code>MoveToActor()</code>, <code>SetFocus()</code>. Owns the brain, blackboard and perception components.</td></tr>
+          <tr data-row><td><code>UBehaviorTree</code></td><td>The asset: the tree of composites, tasks, decorators and services.</td></tr>
+          <tr data-row><td><code>UBehaviorTreeComponent</code></td><td>Runs the tree. Derives from <code>UBrainComponent</code>.</td></tr>
+          <tr data-row><td><code>UBlackboardData</code></td><td>The asset defining the key schema — names and types only.</td></tr>
+          <tr data-row><td><code>UBlackboardComponent</code></td><td>The runtime key/value store. <strong>The only channel between your C++ and the tree.</strong></td></tr>
+          <tr data-row><td><code>UBTCompositeNode</code></td><td>Flow control: Selector (first that succeeds), Sequence (all in order), Simple Parallel.</td></tr>
+          <tr data-row><td><code>UBTTaskNode</code></td><td>Leaf nodes that do things. Return <code>Succeeded</code>, <code>Failed</code> or <code>InProgress</code>.</td></tr>
+          <tr data-row><td><code>UBTDecorator</code></td><td>A condition gating a branch; can abort a running branch when it flips.</td></tr>
+          <tr data-row><td><code>UBTService</code></td><td>A background tick attached to a branch — usually where blackboard keys get refreshed.</td></tr>
+          <tr data-row><td><code>UAIPerceptionComponent</code></td><td>Senses. Configure with <code>UAISenseConfig_Sight</code>, <code>_Hearing</code>, <code>_Damage</code>.</td></tr>
+          <tr data-row><td><code>UAIPerceptionStimuliSourceComponent</code></td><td>Makes an actor <em>perceivable</em>. Players need it, or nothing sees them.</td></tr>
+          <tr data-row><td><code>UEnvQuery</code></td><td>EQS asset answering "where should I stand?" via <code>UEnvQueryGenerator</code> + <code>UEnvQueryTest</code> scoring.</td></tr>
+          <tr data-row><td><code>UNavigationSystemV1</code></td><td>Navmesh registry and pathfinding queries: <code>ProjectPointToNavigation</code>, <code>GetRandomReachablePointInRadius</code>.</td></tr>
+          <tr data-row><td><code>ARecastNavMesh</code></td><td>The generated navmesh. Bounded by <code>ANavMeshBoundsVolume</code>, adjusted by <code>ANavModifierVolume</code> and <code>UNavArea</code> costs.</td></tr>
+          <tr data-row><td><code>UPathFollowingComponent</code></td><td>Walks the path. <code>UCrowdFollowingComponent</code> adds RVO avoidance between agents.</td></tr>
+          <tr data-row><td><code>UStateTree</code> / <code>UStateTreeComponent</code></td><td>Hierarchical state machine that borrows selectors from behavior trees. Newer alternative to BTs. <span class="badge b-plug">plugin</span></td></tr>
+          <tr data-row><td><code>UMassEntitySubsystem</code></td><td>Data-oriented ECS for thousands of agents — crowds and traffic, where one Actor each is far too expensive. <span class="badge b-plug">plugin</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="ex">
+      <figcaption>An AIController that wires up perception and starts a tree</figcaption>
+<pre><code class="language-cpp">void AEnemyController::OnPossess(APawn* InPawn)
+{
+    Super::OnPossess(InPawn);
+
+    if (AEnemyCharacter* Enemy = Cast&lt;AEnemyCharacter&gt;(InPawn))
+    {
+        // Blackboard first — the tree reads it on its first tick
+        UseBlackboard(Enemy-&gt;BlackboardAsset, BlackboardComponent);
+        BlackboardComponent-&gt;SetValueAsVector(TEXT("HomeLocation"),
+                                              InPawn-&gt;GetActorLocation());
+        RunBehaviorTree(Enemy-&gt;BehaviorTree);
+    }
+
+    GetPerceptionComponent()-&gt;OnTargetPerceptionUpdated
+        .AddDynamic(this, &amp;AEnemyController::OnPerceived);
+}
+
+void AEnemyController::OnPerceived(AActor* Actor, FAIStimulus Stimulus)
+{
+    if (!Actor-&gt;IsA&lt;APawn&gt;()) return;
+
+    BlackboardComponent-&gt;SetValueAsObject(TEXT("TargetActor"),
+                                          Stimulus.WasSuccessfullySensed() ? Actor : nullptr);
+    BlackboardComponent-&gt;SetValueAsVector(TEXT("LastKnownLocation"),
+                                          Stimulus.StimulusLocation);
+}</code></pre>
+    </figure>
+
+    <figure class="ex">
+      <figcaption>A custom BT task — latent, so it can run over many frames</figcaption>
+<pre><code class="language-cpp">EBTNodeResult::Type UBTTask_FindCover::ExecuteTask(
+    UBehaviorTreeComponent&amp; OwnerComp, uint8* NodeMemory)
+{
+    AAIController* AI = OwnerComp.GetAIOwner();
+    UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
+    if (!AI || !BB) return EBTNodeResult::Failed;
+
+    const FVector Threat = BB-&gt;GetValueAsVector(ThreatKey.SelectedKeyName);
+
+    FVector Cover;
+    if (!FindCoverPoint(AI-&gt;GetPawn()-&gt;GetActorLocation(), Threat, Cover))
+        return EBTNodeResult::Failed;
+
+    BB-&gt;SetValueAsVector(CoverKey.SelectedKeyName, Cover);
+    return EBTNodeResult::Succeeded;
+}</code></pre>
+    </figure>
+  </section>
+
+  <!-- ============ ANIMATION ============ -->
+  <section id="anim" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">09 &nbsp;·&nbsp; Animation</div>
+      <h2>Animation — assets, the graph, and the runtime</h2>
+      <p class="sec-note">The hard rule: the Anim Blueprint <strong>reads</strong> gameplay state and produces a pose. The moment it starts deciding gameplay, you have a race condition — the anim graph runs on worker threads.</p>
+    </div>
+
+    <div class="scroller">
+      <table class="cls">
+        <thead><tr><th>Class</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>USkeleton</code></td><td>The shared bone hierarchy, sockets, virtual bones and slot names. Assets are compatible only if they share one.</td></tr>
+          <tr data-row><td><code>USkeletalMesh</code></td><td>Geometry skinned to a skeleton, plus LODs, morph targets and a physics asset reference.</td></tr>
+          <tr data-row><td><code>USkeletalMeshComponent</code></td><td>An instance in the world. Owns the AnimInstance, drives ragdoll, exposes sockets.</td></tr>
+          <tr data-row><td><code>UAnimInstance</code></td><td>The C++ side of the Anim Blueprint. <code>NativeInitializeAnimation</code>, <code>NativeUpdateAnimation</code>, <code>NativeThreadSafeUpdateAnimation</code>.</td></tr>
+          <tr data-row><td><code>UAnimBlueprint</code></td><td>The editor asset containing the AnimGraph and Event Graph.</td></tr>
+          <tr data-row><td><code>UAnimSequence</code></td><td>One baked clip of keyframes.</td></tr>
+          <tr data-row><td><code>UAnimMontage</code></td><td>A clip cut into named sections and played into a <em>slot</em> — attacks, reloads, interactions. Interruptible and blendable.</td></tr>
+          <tr data-row><td><code>UBlendSpace</code> / <code>UBlendSpace1D</code></td><td>Blend clips along one or two axes — speed, direction, lean.</td></tr>
+          <tr data-row><td><code>UAimOffsetBlendSpace</code></td><td>Additive pose blended by aim pitch and yaw.</td></tr>
+          <tr data-row><td><code>UAnimNotify</code> / <code>UAnimNotifyState</code></td><td>Events fired from the timeline. A notify is an instant (footstep); a notify state has a duration (hit window, i-frames).</td></tr>
+          <tr data-row><td><code>FAnimNode_Base</code></td><td>The C++ struct behind every AnimGraph node. Subclass it for custom graph nodes.</td></tr>
+          <tr data-row><td><code>UControlRig</code></td><td>Procedural rigging and IK, evaluated in the AnimGraph or in Sequencer. <span class="badge b-plug">plugin</span></td></tr>
+          <tr data-row><td><code>UIKRigDefinition</code> / <code>UIKRetargeter</code></td><td>Retarget animation between skeletons with different proportions.</td></tr>
+          <tr data-row><td><code>UPhysicsAsset</code></td><td>Bodies and constraints for a skeletal mesh — ragdoll and physical animation.</td></tr>
+          <tr data-row><td><code>UPoseAsset</code></td><td>Named poses driven by curve values — facial rigs, hand shapes.</td></tr>
+          <tr data-row><td><code>UPoseSearchDatabase</code></td><td>Motion Matching: pick the next pose from a database instead of a state machine. <span class="badge b-plug">plugin</span></td></tr>
+          <tr data-row><td><code>ULevelSequence</code></td><td>Sequencer — cutscenes and scripted camera moves.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="ex">
+      <figcaption>An AnimInstance that reads gameplay safely off the game thread</figcaption>
+<pre><code class="language-cpp">void UMyAnimInstance::NativeInitializeAnimation()
+{
+    Owner    = Cast&lt;ACharacter&gt;(TryGetPawnOwner());
+    Movement = Owner ? Owner-&gt;GetCharacterMovement() : nullptr;
+}
+
+// Runs on a worker thread. Read gameplay, write only your own members.
+// Never call SpawnActor, Destroy, or anything that touches the world here.
+void UMyAnimInstance::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
+{
+    if (!Movement) return;
+
+    const FVector Velocity = Movement-&gt;Velocity;
+    GroundSpeed = Velocity.Size2D();
+    bIsFalling  = Movement-&gt;IsFalling();
+    bIsCrouched = Movement-&gt;IsCrouching();
+    bShouldMove = GroundSpeed &gt; 3.f &amp;&amp; !Movement-&gt;GetCurrentAcceleration().IsNearlyZero();
+    Direction   = CalculateDirection(Velocity, Owner-&gt;GetActorRotation());
+}</code></pre>
+    </figure>
+
+    <figure class="ex">
+      <figcaption>Montages — playing an attack and reacting when it ends</figcaption>
+<pre><code class="language-cpp">void AMyCharacter::StartAttack()
+{
+    if (!HasAuthority()) { ServerStartAttack(); return; }
+
+    UAnimInstance* Anim = GetMesh()-&gt;GetAnimInstance();
+    if (!Anim || Anim-&gt;Montage_IsPlaying(AttackMontage)) return;
+
+    const float Length = Anim-&gt;Montage_Play(AttackMontage, 1.0f);
+    if (Length &gt; 0.f)
+    {
+        Anim-&gt;Montage_JumpToSection(ComboSections[ComboIndex], AttackMontage);
+
+        FOnMontageEnded Ended;
+        Ended.BindUObject(this, &amp;AMyCharacter::OnAttackEnded);
+        Anim-&gt;Montage_SetEndDelegate(Ended, AttackMontage);
+    }
+}
+
+// AnimNotify → gameplay. The notify fires; the character decides what it means.
+void AMyCharacter::AnimNotify_HitWindowOpen() { WeaponCollider-&gt;SetGenerateOverlapEvents(true); }
+void AMyCharacter::AnimNotify_HitWindowClose() { WeaponCollider-&gt;SetGenerateOverlapEvents(false); }</code></pre>
+    </figure>
+  </section>
+
+  <!-- ============ PHYSICS ============ -->
+  <section id="physics" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">10 &nbsp;·&nbsp; Physics &amp; collision</div>
+      <h2>Physics — Chaos, bodies, channels and queries</h2>
+      <p class="sec-note">Collision belongs to <code>UPrimitiveComponent</code>, never to the Actor. If a query is not hitting what you expect, the answer is almost always a channel response or a missing <code>SetGenerateOverlapEvents</code> on one of the two components.</p>
+    </div>
+
+    <div class="scroller">
+      <table class="cls">
+        <thead><tr><th>Class / type</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>UPrimitiveComponent</code></td><td>Owns collision: channel, responses, profile, overlap and hit delegates.</td></tr>
+          <tr data-row><td><code>FBodyInstance</code></td><td>The actual runtime physics body — mass, damping, constraints, simulate flag.</td></tr>
+          <tr data-row><td><code>UPhysicalMaterial</code></td><td>Friction, restitution and <code>SurfaceType</code> — which is how you pick footstep sounds and impact decals.</td></tr>
+          <tr data-row><td><code>UPhysicsAsset</code></td><td>Ragdoll bodies and constraints for a skeletal mesh.</td></tr>
+          <tr data-row><td><code>UPhysicsConstraintComponent</code></td><td>A joint between two bodies with per-axis limits and drives.</td></tr>
+          <tr data-row><td><code>UPhysicsHandleComponent</code></td><td>Grab and move a simulating body toward a target transform.</td></tr>
+          <tr data-row><td><code>APhysicsVolume</code></td><td>Overrides gravity, friction and water state inside its bounds.</td></tr>
+          <tr data-row><td><code>URadialForceComponent</code></td><td>Impulse and force in a radius — explosions.</td></tr>
+          <tr data-row><td><code>UGeometryCollectionComponent</code></td><td>Chaos destruction: a fractured mesh that breaks under stress. <span class="badge b-plug">plugin</span></td></tr>
+          <tr data-row><td><code>UFleshComponent</code> / <code>UFleshAsset</code></td><td>Chaos Flesh — tetrahedral soft-body simulation, authored through a Dataflow graph. <span class="badge b-plug">plugin</span></td></tr>
+          <tr data-row><td><code>ECollisionChannel</code></td><td><code>ECC_WorldStatic</code>, <code>ECC_Pawn</code>, <code>ECC_Visibility</code>, plus your project's custom channels.</td></tr>
+          <tr data-row><td><code>FCollisionQueryParams</code></td><td>Ignore lists, complex-vs-simple, and the profiler tag for a trace.</td></tr>
+          <tr data-row><td><code>FCollisionShape</code></td><td>Sphere / box / capsule for sweeps and overlaps.</td></tr>
+          <tr data-row><td><code>FHitResult</code></td><td>What a trace hit: actor, component, bone, impact point, normal, physical material, distance.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="ex">
+      <figcaption>Collision setup and the three query shapes you actually use</figcaption>
+<pre><code class="language-cpp">// Setup. Overlap events must be enabled on BOTH components to fire.
+Capsule-&gt;SetCollisionProfileName(TEXT("Pawn"));
+Capsule-&gt;SetGenerateOverlapEvents(true);
+Capsule-&gt;OnComponentBeginOverlap.AddDynamic(this, &amp;AMyActor::OnBeginOverlap);
+
+// Or channel by channel, when no profile fits:
+Trigger-&gt;SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+Trigger-&gt;SetCollisionResponseToAllChannels(ECR_Ignore);
+Trigger-&gt;SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+
+// 1. Line trace — hitscan, interaction, line of sight
+FHitResult Hit;
+FCollisionQueryParams P(SCENE_QUERY_STAT(Shoot), /*bTraceComplex=*/true, this);
+P.AddIgnoredActor(GetOwner());
+GetWorld()-&gt;LineTraceSingleByChannel(Hit, Muzzle, Muzzle + Dir * 10000.f, ECC_Visibility, P);
+
+// 2. Sweep — a melee arc, a thick projectile
+TArray&lt;FHitResult&gt; Hits;
+GetWorld()-&gt;SweepMultiByChannel(Hits, Start, End, FQuat::Identity, ECC_Pawn,
+                                FCollisionShape::MakeSphere(80.f), P);
+
+// 3. Overlap — "everything in the blast radius"
+TArray&lt;FOverlapResult&gt; Overlaps;
+GetWorld()-&gt;OverlapMultiByObjectType(Overlaps, Center,
+    FQuat::Identity, FCollisionObjectQueryParams(ECC_Pawn),
+    FCollisionShape::MakeSphere(Radius), P);
+
+// Surface type drives feedback, and it comes back on the hit
+if (Hit.PhysMaterial.IsValid())
+{
+    const EPhysicalSurface Surface = Hit.PhysMaterial-&gt;SurfaceType;
+    UGameplayStatics::PlaySoundAtLocation(this, ImpactSounds[Surface], Hit.ImpactPoint);
+}</code></pre>
+    </figure>
+  </section>
+
+  <!-- ============ RENDERING ============ -->
+  <section id="render" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">11 &nbsp;·&nbsp; Rendering</div>
+      <h2>Materials, textures, lights and VFX</h2>
+    </div>
+
+    <div class="scroller">
+      <table class="cls">
+        <thead><tr><th>Class</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>UMaterial</code></td><td>The material graph. Compiling one is expensive — you want few of these.</td></tr>
+          <tr data-row><td><code>UMaterialInstanceConstant</code></td><td>An asset overriding a parent material's parameters. No recompile. Use these heavily.</td></tr>
+          <tr data-row><td><code>UMaterialInstanceDynamic</code></td><td>Created at runtime, per object. The only way to animate material parameters from gameplay.</td></tr>
+          <tr data-row><td><code>UMaterialParameterCollection</code></td><td>Global parameters readable by every material — wetness, time of day, team colours.</td></tr>
+          <tr data-row><td><code>UTexture2D</code></td><td>A sampled image. Siblings: <code>UTextureCube</code>, <code>UVolumeTexture</code>.</td></tr>
+          <tr data-row><td><code>UTextureRenderTarget2D</code></td><td>A texture the GPU writes into. Paired with <code>USceneCaptureComponent2D</code>, or written by a material/Niagara for simulation data.</td></tr>
+          <tr data-row><td><code>UStaticMesh</code> / <code>USkeletalMesh</code></td><td>The geometry assets. Nanite settings live on the static mesh.</td></tr>
+          <tr data-row><td><code>UHierarchicalInstancedStaticMeshComponent</code></td><td>Thousands of instances with per-instance culling and LOD.</td></tr>
+          <tr data-row><td><code>UNiagaraSystem</code> / <code>UNiagaraComponent</code></td><td>The VFX asset and its running instance. Drive it with <code>UNiagaraFunctionLibrary</code> and user parameters.</td></tr>
+          <tr data-row><td><code>APostProcessVolume</code> / <code>FPostProcessSettings</code></td><td>Exposure, bloom, colour grading, DOF — as a volume or on the camera manager.</td></tr>
+          <tr data-row><td><code>ULightComponent</code> family</td><td>Directional, point, spot, rect, sky. Mobility (Static / Stationary / Movable) is the setting that matters for cost.</td></tr>
+          <tr data-row><td><code>USkyAtmosphereComponent</code></td><td>Physical sky. With <code>UVolumetricCloudComponent</code> and <code>UExponentialHeightFogComponent</code>.</td></tr>
+          <tr data-row><td><code>UDecalComponent</code></td><td>Projected material — impacts, blood, road markings.</td></tr>
+          <tr data-row><td><code>FPrimitiveSceneProxy</code></td><td>The render-thread mirror of a primitive component. You subclass this only when writing a custom component.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="ex">
+      <figcaption>Dynamic material instances and render targets</figcaption>
+<pre><code class="language-cpp">// One MID per object, created once — not every frame
+void AMyCharacter::BeginPlay()
+{
+    Super::BeginPlay();
+    BodyMID = GetMesh()-&gt;CreateDynamicMaterialInstance(0, BodyMaterial);
+}
+
+void AMyCharacter::OnDamaged(float HealthPct)
+{
+    if (!BodyMID) return;
+    BodyMID-&gt;SetScalarParameterValue(TEXT("DamageAmount"), 1.f - HealthPct);
+    BodyMID-&gt;SetVectorParameterValue(TEXT("TeamColor"), TeamColor);
+}
+
+// Render a camera into a texture you can sample in any material
+SceneCapture-&gt;TextureTarget      = MirrorTarget;   // UTextureRenderTarget2D asset
+SceneCapture-&gt;bCaptureEveryFrame = false;          // capture on demand, not always
+SceneCapture-&gt;CaptureScene();
+
+// Niagara from gameplay
+UNiagaraComponent* FX = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+    this, ImpactSystem, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
+FX-&gt;SetVariableFloat(TEXT("SpawnRate"), Intensity);</code></pre>
+    </figure>
+  </section>
+
+  <!-- ============ AUDIO ============ -->
+  <section id="audio" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">12 &nbsp;·&nbsp; Audio</div>
+      <h2>Sound assets, buses and playback</h2>
+    </div>
+
+    <div class="scroller">
+      <table class="cls">
+        <thead><tr><th>Class</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>USoundWave</code></td><td>One imported audio file.</td></tr>
+          <tr data-row><td><code>USoundCue</code></td><td>A node graph over waves — random selection, pitch variance, crossfade by distance.</td></tr>
+          <tr data-row><td><code>UMetaSoundSource</code></td><td>The modern procedural audio graph. Sample-accurate, with typed inputs you can drive from gameplay.</td></tr>
+          <tr data-row><td><code>UAudioComponent</code></td><td>A running, controllable instance — fade, pause, set parameters, follow an actor.</td></tr>
+          <tr data-row><td><code>USoundAttenuation</code></td><td>Falloff curve, spatialization, occlusion, reverb send.</td></tr>
+          <tr data-row><td><code>USoundClass</code> / <code>USoundMix</code></td><td>Category volumes (Music / SFX / Voice) and mix snapshots you push and pop.</td></tr>
+          <tr data-row><td><code>USoundSubmix</code></td><td>The DSP bus graph — where reverb, EQ and sidechain compression live.</td></tr>
+          <tr data-row><td><code>USoundConcurrency</code></td><td>Voice limits per group, so forty footsteps do not eat the mix.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="ex">
+      <figcaption>Fire-and-forget versus a handle you keep</figcaption>
+<pre><code class="language-cpp">// Fire and forget — no handle, cannot be stopped
+UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, Hit.ImpactPoint);
+
+// 2D, for UI
+UGameplayStatics::PlaySound2D(this, ClickSound);
+
+// Attached and controllable — keep the component
+EngineAudio = UGameplayStatics::SpawnSoundAttached(
+    EngineLoop, GetMesh(), TEXT("engine_socket"));
+EngineAudio-&gt;SetFloatParameter(TEXT("RPM"), CurrentRPM);
+EngineAudio-&gt;FadeOut(0.4f, 0.f);</code></pre>
+    </figure>
+  </section>
+
+  <!-- ============ UI ============ -->
+  <section id="ui" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">13 &nbsp;·&nbsp; User interface</div>
+      <h2>UMG, Slate and CommonUI</h2>
+      <p class="sec-note">Slate is the C++ framework the editor is built from. UMG is the designer-facing layer on top of it, and is what you should use for game UI. <code>AHUD</code> is neither — it is canvas drawing, and today that means debug overlays.</p>
+    </div>
+
+    <div class="scroller">
+      <table class="cls">
+        <thead><tr><th>Class</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>UUserWidget</code></td><td>Your widget Blueprint's class. <code>NativeOnInitialized</code>, <code>NativeConstruct</code>, <code>NativeTick</code>, <code>NativeDestruct</code>.</td></tr>
+          <tr data-row><td><code>UWidget</code></td><td>Base of every UMG element; wraps an underlying Slate widget.</td></tr>
+          <tr data-row><td><code>UPanelWidget</code></td><td>Layout containers: <code>UCanvasPanel</code>, <code>UVerticalBox</code>, <code>UHorizontalBox</code>, <code>UOverlay</code>, <code>UGridPanel</code>, <code>USizeBox</code>, <code>UScrollBox</code>.</td></tr>
+          <tr data-row><td><code>UTextBlock</code>, <code>UImage</code>, <code>UButton</code>, <code>UProgressBar</code></td><td>The leaf widgets. Bind them with <code>meta = (BindWidget)</code> so the compiler enforces they exist.</td></tr>
+          <tr data-row><td><code>UListView</code> / <code>UTileView</code> / <code>UTreeView</code></td><td>Virtualised lists driven by <code>IUserObjectListEntry</code>. Use these instead of spawning a thousand widgets.</td></tr>
+          <tr data-row><td><code>UWidgetComponent</code></td><td>A widget rendered in world space.</td></tr>
+          <tr data-row><td><code>UWidgetAnimation</code></td><td>Timeline animation authored in the designer, played from C++ by name.</td></tr>
+          <tr data-row><td><code>UCommonActivatableWidget</code></td><td>CommonUI: a screen that pushes and pops on a layer stack, with gamepad focus and input routing solved. <span class="badge b-plug">plugin</span></td></tr>
+          <tr data-row><td><code>SWidget</code> / <code>SCompoundWidget</code></td><td>Raw Slate. Reach for it for editor tooling and very high-frequency UI.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="ex">
+      <figcaption>A widget bound to a component's delegate — no ticking</figcaption>
+<pre><code class="language-cpp">UCLASS()
+class UHealthBarWidget : public UUserWidget
+{
+    GENERATED_BODY()
+
+protected:
+    // BindWidget: the compiler fails if the designer renames or deletes it
+    UPROPERTY(meta = (BindWidget))
+    TObjectPtr&lt;UProgressBar&gt; HealthBar;
+
+    UPROPERTY(meta = (BindWidget))
+    TObjectPtr&lt;UTextBlock&gt; HealthText;
+
+    virtual void NativeConstruct() override;
+
+    UFUNCTION()
+    void HandleHealthChanged(float NewHealth, float Delta);
+};
+
+void UHealthBarWidget::NativeConstruct()
+{
+    Super::NativeConstruct();
+
+    if (APawn* P = GetOwningPlayerPawn())
+        if (UHealthComponent* HC = P-&gt;FindComponentByClass&lt;UHealthComponent&gt;())
+        {
+            HC-&gt;OnHealthChanged.AddDynamic(this, &amp;UHealthBarWidget::HandleHealthChanged);
+            HandleHealthChanged(HC-&gt;Health, 0.f);   // paint the initial state
+        }
+}
+
+void UHealthBarWidget::HandleHealthChanged(float NewHealth, float Delta)
+{
+    HealthBar-&gt;SetPercent(NewHealth / 100.f);
+    HealthText-&gt;SetText(FText::AsNumber(FMath::CeilToInt(NewHealth)));
+}
+
+// Creating it — owned by the PlayerController, so it dies with the player
+void AMyPlayerController::BeginPlay()
+{
+    Super::BeginPlay();
+    if (IsLocalController())
+        if (UHealthBarWidget* W = CreateWidget&lt;UHealthBarWidget&gt;(this, HUDWidgetClass))
+            W-&gt;AddToPlayerScreen();
+}</code></pre>
+    </figure>
+  </section>
+
+  <!-- ============ NETWORKING ============ -->
+  <section id="net" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">14 &nbsp;·&nbsp; Multiplayer</div>
+      <h2>Networking — roles, replication and RPCs</h2>
+      <p class="sec-note">Unreal is server-authoritative by design. The client asks; the server decides; the result replicates back. Every multiplayer bug is a violation of that sentence.</p>
+    </div>
+
+    <div class="scroller">
+      <table class="cls">
+        <thead><tr><th>Concept / class</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>HasAuthority()</code></td><td>"Am I the server for this actor?" The guard on every gameplay decision.</td></tr>
+          <tr data-row><td><code>ROLE_Authority</code> / <code>ROLE_AutonomousProxy</code> / <code>ROLE_SimulatedProxy</code></td><td>Server copy / the owning client's copy (predicts, sends input) / everyone else's copy (interpolates only).</td></tr>
+          <tr data-row><td><code>IsLocallyControlled()</code></td><td>"Is this pawn driven by the player at this machine?" Use it to gate camera, input and UI.</td></tr>
+          <tr data-row><td><code>UPROPERTY(Replicated)</code></td><td>Server pushes the value to clients. Requires <code>GetLifetimeReplicatedProps</code>.</td></tr>
+          <tr data-row><td><code>ReplicatedUsing = OnRep_X</code></td><td>Same, plus a client-side callback when it lands. The right place for cosmetic reactions.</td></tr>
+          <tr data-row><td><code>DOREPLIFETIME_CONDITION</code></td><td>Narrow who receives it: <code>COND_OwnerOnly</code>, <code>COND_SkipOwner</code>, <code>COND_InitialOnly</code>.</td></tr>
+          <tr data-row><td><code>UFUNCTION(Server, Reliable, WithValidation)</code></td><td>Client → server. Only callable on an actor the calling client <strong>owns</strong>.</td></tr>
+          <tr data-row><td><code>UFUNCTION(Client, Reliable)</code></td><td>Server → the owning client only.</td></tr>
+          <tr data-row><td><code>UFUNCTION(NetMulticast, Unreliable)</code></td><td>Server → everyone. For cosmetics; never for state.</td></tr>
+          <tr data-row><td><code>AGameSession</code></td><td>Approves logins, enforces max players, handles kick and ban.</td></tr>
+          <tr data-row><td><code>AGameNetworkManager</code></td><td>Movement error tolerance and speed-hack thresholds.</td></tr>
+          <tr data-row><td><code>UNetDriver</code> / <code>UNetConnection</code> / <code>UActorChannel</code></td><td>The transport layer: connections, channels, bandwidth budget.</td></tr>
+          <tr data-row><td><code>UReplicationGraph</code></td><td>Scalable relevancy — what each client is told about, for large player counts.</td></tr>
+          <tr data-row><td><code>NetUpdateFrequency</code> / <code>NetCullDistanceSquared</code></td><td>Per-actor bandwidth dials. Tuning these is most of network optimisation.</td></tr>
+          <tr data-row><td><code>FVector_NetQuantize</code></td><td>Compressed vectors for RPC arguments. Use them; full floats are wasteful.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="ex">
+      <figcaption>The canonical firing flow — ask, decide, replicate, react</figcaption>
+<pre><code class="language-cpp">// ---- header ----
+UFUNCTION(Server, Reliable, WithValidation)
+void ServerRequestFire(FVector_NetQuantize Origin, FVector_NetQuantizeNormal Dir);
+
+UFUNCTION(NetMulticast, Unreliable)
+void MulticastPlayFireFX(FVector_NetQuantize Origin);
+
+UPROPERTY(ReplicatedUsing = OnRep_Ammo)
+int32 Ammo = 30;
+
+// ---- cpp ----
+void AWeapon::LocalFire()          // called on the owning client from input
+{
+    if (Ammo &lt;= 0) return;
+    PlayLocalFireFX();             // instant feedback, no waiting for the server
+    ServerRequestFire(Muzzle-&gt;GetComponentLocation(), GetAimDirection());
+}
+
+bool AWeapon::ServerRequestFire_Validate(FVector_NetQuantize O, FVector_NetQuantizeNormal D)
+{
+    return D.IsNormalized();       // false disconnects a cheating client
+}
+
+void AWeapon::ServerRequestFire_Implementation(FVector_NetQuantize O,
+                                               FVector_NetQuantizeNormal D)
+{
+    if (Ammo &lt;= 0) return;
+    --Ammo;                        // replicates out via OnRep_Ammo
+
+    ApplyDamageAlongRay(O, D);     // authoritative gameplay, server only
+    MulticastPlayFireFX(O);        // cosmetics for everyone
+}
+
+void AWeapon::MulticastPlayFireFX_Implementation(FVector_NetQuantize Origin)
+{
+    if (IsLocallyControlled()) return;   // the owner already played it locally
+    PlayLocalFireFX();
+}
+
+void AWeapon::OnRep_Ammo() { OnAmmoChanged.Broadcast(Ammo); }   // client UI reacts
+
+void AWeapon::GetLifetimeReplicatedProps(TArray&lt;FLifetimeProperty&gt;&amp; Out) const
+{
+    Super::GetLifetimeReplicatedProps(Out);
+    DOREPLIFETIME_CONDITION(AWeapon, Ammo, COND_OwnerOnly);   // nobody else cares
+}</code></pre>
+    </figure>
+  </section>
+
+  <!-- ============ GAS ============ -->
+  <section id="gas" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">15 &nbsp;·&nbsp; Gameplay Ability System</div>
+      <h2>GAS — abilities, effects, attributes, tags <span class="badge b-plug">plugin</span></h2>
+      <p class="sec-note">Heavy, opinionated, and the right answer once you have more than a handful of abilities that stack, cancel and modify each other. Put the ASC on the <code>PlayerState</code> for players (it survives respawn) and on the <code>Pawn</code> for simple AI.</p>
+    </div>
+
+    <div class="scroller">
+      <table class="cls">
+        <thead><tr><th>Class</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>UAbilitySystemComponent</code></td><td>The bridge. Holds granted abilities, active effects, attribute sets and the owned tag container.</td></tr>
+          <tr data-row><td><code>UGameplayAbility</code></td><td>One ability: cost, cooldown, activation conditions, and the actual sequence of things it does.</td></tr>
+          <tr data-row><td><code>UGameplayEffect</code></td><td>A data-only class that changes attributes or grants tags. Instant, has-duration, or infinite.</td></tr>
+          <tr data-row><td><code>UAttributeSet</code></td><td>The numbers, as <code>FGameplayAttributeData</code> properties. Health, Stamina, MoveSpeed, Damage.</td></tr>
+          <tr data-row><td><code>FGameplayTag</code> / <code>FGameplayTagContainer</code></td><td>The hierarchical vocabulary the whole system runs on — <code>State.Stunned</code>, <code>Ability.Melee.Heavy</code>.</td></tr>
+          <tr data-row><td><code>UAbilityTask</code></td><td>Latent steps inside an ability: <code>UAbilityTask_PlayMontageAndWait</code>, <code>_WaitTargetData</code>, <code>_WaitDelay</code>.</td></tr>
+          <tr data-row><td><code>UGameplayEffectExecutionCalculation</code></td><td>Custom damage maths using attributes from both source and target.</td></tr>
+          <tr data-row><td><code>UGameplayModMagnitudeCalculation</code></td><td>A computed magnitude for a single modifier — scaling with level or a stat.</td></tr>
+          <tr data-row><td><code>AGameplayCueNotify_Actor</code></td><td>Cosmetic response replicated by tag, decoupled from the ability that caused it.</td></tr>
+          <tr data-row><td><code>IAbilitySystemInterface</code></td><td>How anything else finds an actor's ASC without caring where it lives.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="ex">
+      <figcaption>An attribute set, and granting an ability</figcaption>
+<pre><code class="language-cpp">#define ATTRIBUTE_ACCESSORS(ClassName, PropertyName) \
+    GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName) \
+    GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName) \
+    GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName) \
+    GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)
+
+UCLASS()
+class UMyAttributeSet : public UAttributeSet
+{
+    GENERATED_BODY()
+public:
+    UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Health, Category = "Vitals")
+    FGameplayAttributeData Health;
+    ATTRIBUTE_ACCESSORS(UMyAttributeSet, Health)
+
+    UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MaxHealth, Category = "Vitals")
+    FGameplayAttributeData MaxHealth;
+    ATTRIBUTE_ACCESSORS(UMyAttributeSet, MaxHealth)
+
+    // Clamp here — this runs after every effect application
+    virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData&amp; Data) override
+    {
+        if (Data.EvaluatedData.Attribute == GetHealthAttribute())
+            SetHealth(FMath::Clamp(GetHealth(), 0.f, GetMaxHealth()));
+    }
+};
+
+// Granting and activating — server only
+void AMyPlayerState::GrantStartupAbilities()
+{
+    if (!HasAuthority()) return;
+    for (TSubclassOf&lt;UGameplayAbility&gt; Ability : StartupAbilities)
+        AbilitySystem-&gt;GiveAbility(FGameplayAbilitySpec(Ability, /*Level=*/1));
+}
+
+// Activating from input, by tag
+FGameplayTagContainer Tags;
+Tags.AddTag(FGameplayTag::RequestGameplayTag(TEXT("Ability.Melee.Light")));
+AbilitySystem-&gt;TryActivateAbilitiesByTag(Tags);</code></pre>
+    </figure>
+  </section>
+
+  <!-- ============ DATA ============ -->
+  <section id="data" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">16 &nbsp;·&nbsp; Data, config, save</div>
+      <h2>Getting numbers out of code</h2>
+      <p class="sec-note">Every constant you hardcode is a recompile a designer cannot do. These classes are how tuning stops being a programmer task.</p>
+    </div>
+
+    <div class="scroller">
+      <table class="cls">
+        <thead><tr><th>Class</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>UDataAsset</code></td><td>A plain designer-authored config object.</td></tr>
+          <tr data-row><td><code>UPrimaryDataAsset</code></td><td>Same, but registered with the Asset Manager so it can be discovered and loaded asynchronously by type.</td></tr>
+          <tr data-row><td><code>UDataTable</code> + <code>FTableRowBase</code></td><td>Spreadsheet-shaped data, imported from CSV or JSON. Rows found by <code>FName</code>.</td></tr>
+          <tr data-row><td><code>UCurveFloat</code> / <code>UCurveTable</code></td><td>Tuning curves — damage falloff, XP per level, difficulty ramps.</td></tr>
+          <tr data-row><td><code>UAssetManager</code></td><td>Primary asset registry, async loading, cook chunking. The entry point for "load this on demand".</td></tr>
+          <tr data-row><td><code>FStreamableManager</code></td><td>The actual async load handles behind the Asset Manager.</td></tr>
+          <tr data-row><td><code>UDeveloperSettings</code></td><td>Appears in Project Settings automatically, persisted to a config <code>.ini</code>.</td></tr>
+          <tr data-row><td><code>UGameUserSettings</code></td><td>Resolution, quality scalability, vsync, frame cap. The backend of your options menu.</td></tr>
+          <tr data-row><td><code>USaveGame</code></td><td>A serializable object written to a named slot on disk.</td></tr>
+          <tr data-row><td><code>TSoftObjectPtr</code> / <code>TSoftClassPtr</code></td><td>Reference an asset by path without loading it. The single most effective memory tool in the engine.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="ex">
+      <figcaption>DataTable rows, async loading, and a save slot</figcaption>
+<pre><code class="language-cpp">USTRUCT(BlueprintType)
+struct FWeaponRow : public FTableRowBase
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) float Damage   = 10.f;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) float FireRate = 0.12f;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) int32 MagSize  = 30;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) TSoftObjectPtr&lt;USkeletalMesh&gt; Mesh;
+};
+
+// Look up a row
+if (const FWeaponRow* Row = WeaponTable-&gt;FindRow&lt;FWeaponRow&gt;(WeaponId, TEXT("Equip")))
+{
+    Damage  = Row-&gt;Damage;
+    MagSize = Row-&gt;MagSize;
+
+    // Load the mesh only now, and only if it is not already resident
+    UAssetManager::GetStreamableManager().RequestAsyncLoad(
+        Row-&gt;Mesh.ToSoftObjectPath(),
+        FStreamableDelegate::CreateUObject(this, &amp;AWeapon::OnMeshLoaded));
+}
+
+// Save / load
+UMySaveGame* Save = Cast&lt;UMySaveGame&gt;(
+    UGameplayStatics::CreateSaveGameObject(UMySaveGame::StaticClass()));
+Save-&gt;PlayerLevel = 12;
+Save-&gt;UnlockedWeapons = Unlocked;
+UGameplayStatics::SaveGameToSlot(Save, TEXT("Slot0"), 0);
+
+if (UGameplayStatics::DoesSaveGameExist(TEXT("Slot0"), 0))
+    Save = Cast&lt;UMySaveGame&gt;(UGameplayStatics::LoadGameFromSlot(TEXT("Slot0"), 0));</code></pre>
+    </figure>
+  </section>
+
+  <!-- ============ LIBRARIES ============ -->
+  <section id="lib" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">17 &nbsp;·&nbsp; Helpers</div>
+      <h2>Function libraries, delegates and async</h2>
+    </div>
+
+    <div class="scroller">
+      <table class="cls">
+        <thead><tr><th>Class / macro</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>UBlueprintFunctionLibrary</code></td><td>Static functions exposed to Blueprint. Where your own helpers belong.</td></tr>
+          <tr data-row><td><code>UGameplayStatics</code></td><td>The big one: spawn actors and emitters, play sounds, apply damage, get the player pawn, open levels, save and load.</td></tr>
+          <tr data-row><td><code>UKismetMathLibrary</code> / <code>UKismetSystemLibrary</code></td><td>Math and system helpers. In C++ prefer <code>FMath</code> directly — Kismet exists for Blueprint.</td></tr>
+          <tr data-row><td><code>UBlueprintAsyncActionBase</code></td><td>A latent Blueprint node with output execution pins — async loads, HTTP requests, timed waits.</td></tr>
+          <tr data-row><td><code>FTimerManager</code></td><td><code>SetTimer</code>, <code>SetTimerForNextTick</code>, <code>ClearTimer</code>. Replaces most per-frame ticking.</td></tr>
+          <tr data-row><td><code>DECLARE_DYNAMIC_MULTICAST_DELEGATE</code></td><td>Blueprint-assignable event. Slower, serialized by name; needed for <code>BlueprintAssignable</code>.</td></tr>
+          <tr data-row><td><code>DECLARE_MULTICAST_DELEGATE</code></td><td>C++-only event. Fast, supports lambdas, invisible to Blueprint.</td></tr>
+          <tr data-row><td><code>AsyncTask</code> / <code>FRunnable</code></td><td>Real threading. Anything touching UObjects must hop back to the game thread.</td></tr>
+          <tr data-row><td><code>FScopeLock</code> / <code>FCriticalSection</code></td><td>Mutual exclusion when you genuinely do share data across threads.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="ex">
+      <figcaption>Delegates — the decoupling tool you should reach for first</figcaption>
+<pre><code class="language-cpp">// Blueprint-assignable: designers bind it in the editor
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPickedUp, AActor*, By);
+
+UPROPERTY(BlueprintAssignable, Category = "Pickup")
+FOnPickedUp OnPickedUp;
+
+OnPickedUp.Broadcast(Collector);
+OnPickedUp.AddDynamic(this, &amp;AMyActor::HandlePickup);   // must be a UFUNCTION()
+
+// C++ only: faster, and takes lambdas
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnWaveChanged, int32, int32);
+FOnWaveChanged OnWaveChanged;
+
+FDelegateHandle H = OnWaveChanged.AddLambda([this](int32 Wave, int32 Total) {
+    UE_LOG(LogTemp, Log, TEXT("Wave %d of %d"), Wave, Total);
+});
+OnWaveChanged.Remove(H);   // always unbind — a stale handle is a crash
+
+// Off-thread work, back on the game thread to touch anything UObject
+Async(EAsyncExecution::ThreadPool, [Path]() {
+    TArray&lt;uint8&gt; Data = ExpensiveLoad(Path);
+    AsyncTask(ENamedThreads::GameThread, [Data = MoveTemp(Data)]() {
+        ApplyToWorld(Data);
+    });
+});</code></pre>
+    </figure>
+  </section>
+
+  <!-- ============ GAME FEATURES ============ -->
+  <section id="features" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">18 &nbsp;·&nbsp; Modular gameplay</div>
+      <h2>Game Features — shipping content as plugins <span class="badge b-plug">plugin</span></h2>
+      <p class="sec-note">The Lyra-style architecture: a feature is a plugin that injects components, widgets and input mappings into actors that already exist, without any base class knowing about it.</p>
+    </div>
+
+    <div class="scroller">
+      <table class="cls">
+        <thead><tr><th>Class</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>UGameFeatureData</code></td><td>A plugin's manifest — which actions run when the feature activates.</td></tr>
+          <tr data-row><td><code>UGameFeatureAction</code></td><td>One injection: add a component to a class, add a widget to a layer, add an input mapping context.</td></tr>
+          <tr data-row><td><code>UGameFrameworkComponentManager</code></td><td>Adds components to actors of a given class at runtime, including ones already spawned.</td></tr>
+          <tr data-row><td><code>UGameplayMessageSubsystem</code></td><td>Publish/subscribe by gameplay tag. Decouples systems that must not know each other's types.</td></tr>
+          <tr data-row><td><code>UAssetManager</code> subclass</td><td>Where feature plugins register their primary asset types.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ PCG ============ -->
+  <section id="pcg" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">19 &nbsp;·&nbsp; Procedural content</div>
+      <h2>PCG — graph-driven world population <span class="badge b-plug">plugin</span></h2>
+      <p class="sec-note">A visual dataflow framework: spatial data enters from a component's bounds, becomes points, gets filtered and transformed by nodes, and comes out as spawned meshes or actors. Note that the PCG API moves between engine versions more than the core framework does.</p>
+    </div>
+
+    <div class="scroller">
+      <table class="cls">
+        <thead><tr><th>Class</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>UPCGComponent</code></td><td>Attaches a graph to an actor and feeds that actor's bounds in as the seed volume. Triggers generation.</td></tr>
+          <tr data-row><td><code>UPCGGraph</code></td><td>The node graph asset. <code>UPCGGraphInterface</code> lets subgraphs and instances share the type.</td></tr>
+          <tr data-row><td><code>UPCGNode</code> / <code>UPCGSettings</code></td><td>A node and its parameters. Subclass <code>UPCGSettings</code> plus <code>IPCGElement</code> to write a custom node in C++.</td></tr>
+          <tr data-row><td><code>UPCGData</code></td><td>What flows along the wires. <code>UPCGPointData</code>, <code>UPCGSpatialData</code>, <code>UPCGParamData</code>.</td></tr>
+          <tr data-row><td><code>UPCGSubsystem</code></td><td>Schedules and executes generation, in editor and at runtime.</td></tr>
+          <tr data-row><td><code>APCGWorldActor</code> / <code>APCGPartitionActor</code></td><td>Partitioned generation across a World Partition grid, so a big world generates in streamed cells.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ TYPES ============ -->
+  <section id="types" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">20 &nbsp;·&nbsp; Outside the UObject tree</div>
+      <h2>Plain types — structs, containers and pointers</h2>
+      <p class="sec-note">None of these are garbage-collected. Pointer choice is where most memory bugs are born, so the table below is worth memorising.</p>
+    </div>
+
+    <h3>Pointers — pick the right one</h3>
+    <div class="scroller">
+      <table class="cls">
+        <thead><tr><th>Type</th><th>Use it when</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>TObjectPtr&lt;T&gt;</code></td><td>A hard reference held in a <code>UPROPERTY()</code>. Keeps the object alive. The modern form of a raw <code>UObject*</code> member.</td></tr>
+          <tr data-row><td><code>TWeakObjectPtr&lt;T&gt;</code></td><td>You want to observe without keeping alive. Always <code>IsValid()</code> before use. Correct for caches and back-pointers.</td></tr>
+          <tr data-row><td><code>TSoftObjectPtr&lt;T&gt;</code></td><td>You want the <em>path</em> now and the asset later. Nothing loads until you ask.</td></tr>
+          <tr data-row><td><code>TSubclassOf&lt;T&gt;</code></td><td>You need a class, not an instance, and want the editor to offer only valid ones.</td></tr>
+          <tr data-row><td><code>TSharedPtr&lt;T&gt;</code> / <code>TUniquePtr&lt;T&gt;</code></td><td>Non-UObject C++ objects only. Never for UObjects — the GC does not know about them.</td></tr>
+          <tr data-row><td>raw <code>UObject*</code> with no <code>UPROPERTY</code></td><td><strong>Never.</strong> The garbage collector will delete it while you still hold the pointer.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Strings — three types, not interchangeable</h3>
+    <div class="scroller">
+      <table class="cls">
+        <thead><tr><th>Type</th><th>Use it for</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>FName</code></td><td>Identifiers: bone names, socket names, data table row keys, tags. Interned, case-insensitive, comparison is an integer compare.</td></tr>
+          <tr data-row><td><code>FString</code></td><td>Mutable working text: building a path, parsing, logging. Heap-allocated, so avoid in hot loops.</td></tr>
+          <tr data-row><td><code>FText</code></td><td>Anything a player reads. Carries localisation and number/date formatting. Never build one with string concatenation.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Everything else</h3>
+    <div class="scroller">
+      <table class="cls">
+        <thead><tr><th>Type</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>FVector</code>, <code>FRotator</code>, <code>FQuat</code>, <code>FTransform</code></td><td>Position, Euler rotation, quaternion rotation, and the combined location/rotation/scale. Interpolate with <code>FQuat</code>, author with <code>FRotator</code>.</td></tr>
+          <tr data-row><td><code>FBox</code>, <code>FSphere</code>, <code>FPlane</code>, <code>FMatrix</code></td><td>Bounds and linear algebra.</td></tr>
+          <tr data-row><td><code>FLinearColor</code> / <code>FColor</code></td><td>Float colour for maths and materials; packed 8-bit colour for storage.</td></tr>
+          <tr data-row><td><code>TArray&lt;T&gt;</code>, <code>TMap&lt;K,V&gt;</code>, <code>TSet&lt;T&gt;</code></td><td>The containers. <code>TArray</code> is contiguous — <code>Reserve()</code> before a known-size fill.</td></tr>
+          <tr data-row><td><code>TOptional&lt;T&gt;</code>, <code>TVariant&lt;...&gt;</code>, <code>TTuple&lt;...&gt;</code></td><td>Maybe-a-value, one-of-several, and fixed heterogeneous pairs.</td></tr>
+          <tr data-row><td><code>FHitResult</code>, <code>FOverlapResult</code></td><td>What a query returned.</td></tr>
+          <tr data-row><td><code>FGameplayTag</code></td><td>A hierarchical identifier registered project-wide. Cheap to compare, matches by parent.</td></tr>
+          <tr data-row><td><code>FTimerHandle</code>, <code>FDelegateHandle</code></td><td>Handles you must keep in order to cancel or unbind later.</td></tr>
+          <tr data-row><td><code>FGuid</code>, <code>FDateTime</code>, <code>FTimespan</code></td><td>Unique ids and time.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ LIFECYCLE ============ -->
+  <section id="lifecycle" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">21 &nbsp;·&nbsp; Execution order</div>
+      <h2>Lifecycle — when each function actually runs</h2>
+      <p class="sec-note">Half of all "it works in the editor but not in a build" bugs are an assumption about this order. <code>GetWorld()</code> is null in a constructor; <code>PlayerState</code> is null in a client's <code>BeginPlay</code>.</p>
+    </div>
+
+    <div class="cols2">
+      <div class="panel" style="min-width:0">
+        <div class="grp">Actor spawned at runtime</div>
+        <ol class="steps">
+          <li data-row><code>UWorld::SpawnActor</code></li>
+          <li data-row><code>PostSpawnInitialize</code></li>
+          <li data-row><code>PostActorCreated</code> — the constructor has run</li>
+          <li data-row><code>ExecuteConstruction</code> → <code>OnConstruction</code></li>
+          <li data-row><code>PostActorConstruction</code></li>
+          <li data-row><code>PreInitializeComponents</code></li>
+          <li data-row><code>UActorComponent::InitializeComponent</code></li>
+          <li data-row><code>PostInitializeComponents</code> — <span class="hi">components exist and are safe</span></li>
+          <li data-row><code>UWorld::OnActorSpawned</code> broadcast</li>
+          <li data-row><code>BeginPlay</code> — <span class="hi">the world exists; start here</span></li>
+        </ol>
+      </div>
+
+      <div class="panel" style="min-width:0">
+        <div class="grp">Actor placed in a level</div>
+        <ol class="steps">
+          <li data-row><code>PostLoad</code> — loaded from disk, mutually exclusive with <code>PostActorCreated</code></li>
+          <li data-row><code>UAISystemBase::InitializeActorsForPlay</code></li>
+          <li data-row><code>ULevel::RouteActorInitialize</code></li>
+          <li data-row><code>PreInitializeComponents</code></li>
+          <li data-row><code>UActorComponent::InitializeComponent</code></li>
+          <li data-row><code>PostInitializeComponents</code></li>
+          <li data-row><code>BeginPlay</code></li>
+        </ol>
+        <div class="grp">Teardown</div>
+        <ol class="steps">
+          <li data-row><code>EndPlay(Reason)</code> — unbind everything here</li>
+          <li data-row><code>Destroyed</code></li>
+          <li data-row>Garbage collection, eventually</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="cols2">
+      <div class="panel" style="min-width:0">
+        <div class="grp">GameMode startup, in order</div>
+        <ol class="steps">
+          <li data-row><code>InitGame</code> — before any actor's <code>BeginPlay</code></li>
+          <li data-row><code>InitGameState</code></li>
+          <li data-row><code>PreLogin</code> — approve or reject the connection</li>
+          <li data-row><code>Login</code> — spawns the <code>APlayerController</code></li>
+          <li data-row><code>PostLogin</code> — <span class="hi">controller exists, safe to touch</span></li>
+          <li data-row><code>HandleStartingNewPlayer</code></li>
+          <li data-row><code>RestartPlayer</code> → <code>ChoosePlayerStart</code> → spawns the Pawn</li>
+          <li data-row><code>APawn::PossessedBy</code> then <code>APlayerController::AcknowledgePossession</code></li>
+        </ol>
+      </div>
+
+      <div class="panel" style="min-width:0">
+        <div class="grp">Tick groups, in frame order</div>
+        <ol class="steps">
+          <li data-row><code>TG_PrePhysics</code> — default; gameplay reads last frame's physics</li>
+          <li data-row><code>TG_StartPhysics</code> → <code>TG_DuringPhysics</code></li>
+          <li data-row><code>TG_EndPhysics</code> → <code>TG_PostPhysics</code> — physics results are final</li>
+          <li data-row><code>TG_PostUpdateWork</code> — cameras and anything that must see everything</li>
+        </ol>
+        <div class="grp">Component lifecycle</div>
+        <ol class="steps">
+          <li data-row><code>OnRegister</code> → <code>InitializeComponent</code> → <code>BeginPlay</code></li>
+          <li data-row><code>TickComponent</code></li>
+          <li data-row><code>EndPlay</code> → <code>OnUnregister</code> → <code>OnComponentDestroyed</code></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PLACEMENT ============ -->
+  <section id="placement" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">22 &nbsp;·&nbsp; The working question</div>
+      <h2>I want to build X. Which class owns it?</h2>
+      <p class="sec-note">The reason column is the point. It is almost always lifetime or visibility.</p>
+    </div>
+
+    <div class="scroller">
+      <table>
+        <thead><tr><th style="width:36%">You want to…</th><th style="width:26%">Put it in</th><th>Because</th></tr></thead>
+        <tbody>
+          <tr data-row><td>Decide who may join, where they spawn, when the round ends, who won</td><td><code>AGameModeBase</code></td><td>Rules only the authority arbitrates. Clients must never be able to answer these.</td></tr>
+          <tr data-row><td>Show everyone the score, round phase, objective list, connected players</td><td><code>AGameStateBase</code></td><td>Replicated to every machine, so a client can read it directly.</td></tr>
+          <tr data-row><td>Track one player's name, team, kills, ping — and keep it through death</td><td><code>APlayerState</code></td><td>Replicated, and it outlives the Pawn. Score on the Pawn dies with the Pawn.</td></tr>
+          <tr data-row><td>Bind input, open a menu, request a respawn, call the server</td><td><code>APlayerController</code></td><td>The player's will. It persists while the body is destroyed and rebuilt.</td></tr>
+          <tr data-row><td>Move, collide, take damage, play footsteps, hold a weapon</td><td><code>APawn</code> / <code>ACharacter</code></td><td>The body. Assume it will be destroyed and respawned repeatedly.</td></tr>
+          <tr data-row><td>Turn gameplay state into a pose</td><td><code>UAnimInstance</code></td><td>The Anim BP reads gameplay. If it starts writing gameplay you have a race condition.</td></tr>
+          <tr data-row><td>Fire an event at an exact frame of an animation</td><td><code>UAnimNotify</code> / <code>UAnimNotifyState</code></td><td>The animator owns the timing; the character owns the meaning.</td></tr>
+          <tr data-row><td>Draw the health bar, inventory, pause menu</td><td><code>UUserWidget</code> (UMG)</td><td>Owned by the PlayerController. <code>AHUD</code> is only for canvas and debug draw now.</td></tr>
+          <tr data-row><td>Manage a stack of screens with gamepad focus</td><td><code>UCommonActivatableWidget</code></td><td>CommonUI already solved push/pop, focus and input routing.</td></tr>
+          <tr data-row><td>Keep settings, save file, account session or music across a level load</td><td><code>UGameInstance</code> / <code>UGameInstanceSubsystem</code></td><td>Nothing else survives <code>OpenLevel</code>. The GameMode and every actor are destroyed.</td></tr>
+          <tr data-row><td>Run a spawn director, weather system or wave manager for this map</td><td><code>UWorldSubsystem</code></td><td>Created with the World, gone on travel. No manager actor to place by hand.</td></tr>
+          <tr data-row><td>Hold input mapping contexts or a per-seat UI stack</td><td><code>ULocalPlayerSubsystem</code></td><td>One instance per split-screen player, which is what these actually are.</td></tr>
+          <tr data-row><td>Change what the controls mean in a vehicle or a menu</td><td><code>UInputMappingContext</code> swap</td><td>Contexts are assets with priorities. Never branch on a mode flag inside a handler.</td></tr>
+          <tr data-row><td>Make a bot choose a target and path to it</td><td><code>AAIController</code> + Behavior Tree</td><td>Will lives in the Controller. The bot's Pawn is the same class a human drives.</td></tr>
+          <tr data-row><td>Let AI logic and C++ exchange values</td><td><code>UBlackboardComponent</code></td><td>The only sanctioned channel. Reaching into tree nodes from outside will break.</td></tr>
+          <tr data-row><td>Pick a good position to stand, flank or take cover</td><td><code>UEnvQuery</code> (EQS)</td><td>Scoring and weighting are data, not code — designers can tune them.</td></tr>
+          <tr data-row><td>Simulate thousands of agents</td><td><code>UMassEntitySubsystem</code></td><td>One Actor each is far too expensive past a few hundred.</td></tr>
+          <tr data-row><td>Give health, inventory, interaction or abilities to many unrelated actors</td><td><code>UActorComponent</code></td><td>Composition. A shared base class forces every future actor into that chain.</td></tr>
+          <tr data-row><td>Ask "can this thing be picked up?" of actors with no common parent</td><td><code>UInterface</code> pair</td><td>Behavior contract without inheritance, and no expensive cast.</td></tr>
+          <tr data-row><td>Build abilities that stack, cancel, cost and cool down</td><td><code>UGameplayAbility</code> + <code>UGameplayEffect</code></td><td>GAS already solved prediction, stacking and tag-based cancellation.</td></tr>
+          <tr data-row><td>Store an actor's numbers so effects can modify them</td><td><code>UAttributeSet</code></td><td>Attributes are what Gameplay Effects know how to change.</td></tr>
+          <tr data-row><td>Store tuning numbers, item definitions, loot tables</td><td><code>UDataAsset</code> / <code>UDataTable</code></td><td>Designers edit them with no recompile, and they load asynchronously.</td></tr>
+          <tr data-row><td>Reference a heavy asset you may never need</td><td><code>TSoftObjectPtr</code></td><td>A hard pointer pulls the whole asset into memory with its owner.</td></tr>
+          <tr data-row><td>Expose a project-wide setting in Project Settings</td><td><code>UDeveloperSettings</code></td><td>Automatic UI and config <code>.ini</code> persistence, no editor code.</td></tr>
+          <tr data-row><td>Write progress to disk</td><td><code>USaveGame</code></td><td>Serialized to a slot; usually driven from a GameInstance subsystem.</td></tr>
+          <tr data-row><td>Back a graphics options menu</td><td><code>UGameUserSettings</code></td><td>Resolution and scalability already persist and apply correctly.</td></tr>
+          <tr data-row><td>Camera shake, fade to black, a post-process blend on hit</td><td><code>APlayerCameraManager</code></td><td>It computes the final view every frame, after the camera component.</td></tr>
+          <tr data-row><td>Animate a material parameter from gameplay</td><td><code>UMaterialInstanceDynamic</code></td><td>The only runtime-writable material. Create it once, not per frame.</td></tr>
+          <tr data-row><td>Render a camera view into a texture</td><td><code>USceneCaptureComponent2D</code> + <code>UTextureRenderTarget2D</code></td><td>Mirrors, portals, minimaps, and baking simulation data for materials.</td></tr>
+          <tr data-row><td>Play a sound you may need to stop, fade or parameterise</td><td><code>UAudioComponent</code></td><td><code>PlaySoundAtLocation</code> gives you no handle back.</td></tr>
+          <tr data-row><td>Open one specific door in one specific map at match start</td><td><code>ALevelScriptActor</code></td><td>Level Blueprint. Legitimate for genuine one-offs — keep it small.</td></tr>
+          <tr data-row><td>Change gravity or kill Z for a single map</td><td><code>AWorldSettings</code></td><td>Per-map, and it can override the GameMode for that map too.</td></tr>
+          <tr data-row><td>Ship a game mode as a self-contained plugin</td><td><code>UGameFeatureData</code></td><td>It injects components and widgets without any base class knowing about it.</td></tr>
+          <tr data-row><td>Populate a large world with vegetation or props</td><td><code>UPCGComponent</code> + <code>UPCGGraph</code></td><td>Rules a designer can tune, regenerating deterministically.</td></tr>
+          <tr data-row><td>Run something periodically without ticking</td><td><code>FTimerManager</code></td><td>A timer at 4 Hz costs a fraction of a 60 Hz tick that does nothing most frames.</td></tr>
+          <tr data-row><td>Let two systems talk without knowing each other's types</td><td>A delegate, or <code>UGameplayMessageSubsystem</code></td><td>Direct casts create hard references that pull assets into memory.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ RULES ============ -->
+  <section id="rules" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">23 &nbsp;·&nbsp; Decision rules</div>
+      <h2>Eight checks that resolve most placement questions</h2>
+    </div>
+
+    <div class="rules">
+      <div class="rule" data-row><span class="n">01</span><p><strong>Controller is the will, Pawn is the body.</strong> Input handling and decisions go in the Controller; movement, collision and presentation go in the Pawn. Bind input inside your Character and you will regret it the first time you write a bot.</p></div>
+      <div class="rule" data-row><span class="n">02</span><p><strong>If a client needs to know it, it cannot live in the GameMode.</strong> Move it to <code>GameState</code> (everyone) or <code>PlayerState</code> (one player). The GameMode decides; the states publish.</p></div>
+      <div class="rule" data-row><span class="n">03</span><p><strong>If it must survive the Pawn dying, it belongs in PlayerState.</strong> Score, team, loadout, unlocks. Anything on the Pawn is gone the moment it is destroyed.</p></div>
+      <div class="rule" data-row><span class="n">04</span><p><strong>If it must survive a level change, it belongs in GameInstance.</strong> Or a <code>UGameInstanceSubsystem</code> — same lifetime, less boilerplate, no manual singleton.</p></div>
+      <div class="rule" data-row><span class="n">05</span><p><strong>If two unrelated actors need the same behavior, it is a component.</strong> Not a new base class. A door, a crate and an enemy can all carry a health component; they should not share an ancestor.</p></div>
+      <div class="rule" data-row><span class="n">06</span><p><strong>Anything that decides an outcome runs on the server.</strong> Guard it with <code>HasAuthority()</code>. The client asks with a Server RPC and waits to be told; it never applies the result itself.</p></div>
+      <div class="rule" data-row><span class="n">07</span><p><strong>If a designer will ever want to change the number, it is data.</strong> A <code>UDataAsset</code> or a <code>UDataTable</code>, not a constant in a header they cannot recompile.</p></div>
+      <div class="rule" data-row><span class="n">08</span><p><strong>If it does not need to run every frame, it should not tick.</strong> Default <code>bCanEverTick</code> to false and use timers, delegates and events. This is the single cheapest performance decision in the engine.</p></div>
+    </div>
+  </section>
+
+  <!-- ============ GOTCHAS ============ -->
+  <section id="gotchas" data-sec>
+    <div class="sec-head">
+      <div class="eyebrow">24 &nbsp;·&nbsp; Failure modes</div>
+      <h2>The bugs this hierarchy causes, and why</h2>
+    </div>
+
+    <div class="scroller">
+      <table>
+        <thead><tr><th style="width:38%">Symptom</th><th>Cause and fix</th></tr></thead>
+        <tbody>
+          <tr data-row><td><code>GetWorld()</code> returns null</td><td>You are in a constructor. The CDO is built at editor startup with no world. Move the work to <code>BeginPlay</code> or <code>PostInitializeComponents</code>.</td></tr>
+          <tr data-row><td>Values set in the constructor appear on every instance</td><td>The constructor builds the Class Default Object. It is for defaults, never for gameplay.</td></tr>
+          <tr data-row><td><code>GetPlayerState()</code> is null in <code>BeginPlay</code> on a client</td><td>Replication order is not guaranteed. React in <code>OnRep_PlayerState</code> or <code>PossessedBy</code> instead.</td></tr>
+          <tr data-row><td><code>GetAuthGameMode()</code> is null</td><td>You are on a client. The GameMode never exists there. Read <code>GameState</code> instead.</td></tr>
+          <tr data-row><td>A Server RPC silently does nothing</td><td>The calling client does not <em>own</em> that actor. Set <code>Owner</code> at spawn, or route the call through the PlayerController.</td></tr>
+          <tr data-row><td>A replicated property never arrives</td><td>Missing <code>bReplicates = true</code>, missing <code>GetLifetimeReplicatedProps</code>, or on a component, missing <code>SetIsReplicatedByDefault(true)</code>.</td></tr>
+          <tr data-row><td>Overlap events never fire</td><td><code>SetGenerateOverlapEvents(true)</code> is required on <strong>both</strong> components, and their channel responses must be <code>Overlap</code> on both sides.</td></tr>
+          <tr data-row><td>A pointer becomes garbage mid-frame</td><td>A <code>UObject*</code> member without <code>UPROPERTY()</code> is invisible to the garbage collector. Mark it, or use <code>TWeakObjectPtr</code>.</td></tr>
+          <tr data-row><td>Cooked build is enormous</td><td>Hard references. One Blueprint casting to another pulls it and everything it references into memory. Use interfaces and <code>TSoftObjectPtr</code>.</td></tr>
+          <tr data-row><td>Animation causes a crash or a race</td><td>Gameplay writes from <code>NativeThreadSafeUpdateAnimation</code>, which runs off the game thread. Read only there.</td></tr>
+          <tr data-row><td>Frame rate dies with actor count</td><td>Everything ticks. Set <code>PrimaryActorTick.bCanEverTick = false</code> as the default and opt in deliberately.</td></tr>
+          <tr data-row><td>A delegate fires on a destroyed object</td><td>You never unbound it. Unbind in <code>EndPlay</code>, and keep the <code>FDelegateHandle</code> when you bind a lambda.</td></tr>
+          <tr data-row><td>UI text cannot be translated</td><td>You used <code>FString</code>. Player-facing text is <code>FText</code>, always.</td></tr>
+          <tr data-row><td>Works in PIE, breaks in a packaged client</td><td>PIE runs server and client in one process, so authority bugs stay hidden. Test with <em>Play As Client</em> and two players.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section data-sec>
+    <div class="note">
+      <h3>One caveat about the future</h3>
+      <p>Everything above is the current 5.x framework and is what you should build on today. Epic has signalled that in Unreal Engine 6 a Verse-based <strong>Scene Graph</strong> will eventually sit where the Actor system sits, with Blueprints and Actors deprecated once it matures — but Actors and Blueprints stay fully supported through UE6 Early Access, and conversion tooling is promised. Reported dates are Early Access around late 2027 and a final release around 2029.</p>
+      <p style="color:var(--muted);font-size:.82rem">That paragraph comes from press coverage of Epic's announcements, not from the engine documentation. Treat the dates as soft.</p>
+    </div>
+    <div class="srcs">
+      <span>Class names and responsibilities verified against Unreal Engine 5.8 documentation:</span>
+      <a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/gameplay-framework-in-unreal-engine">Gameplay Framework</a>
+      <a href="https://dev.epicgames.com/documentation/unreal-engine/gameplay-framework-quick-reference-in-unreal-engine">Gameplay Framework Quick Reference</a>
+      <a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/unreal-engine-actor-lifecycle">Actor Lifecycle</a>
+      <a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/programming-subsystems-in-unreal-engine">Programming Subsystems</a>
+      <a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/enhanced-input-in-unreal-engine">Enhanced Input</a>
+      <a href="https://dev.epicgames.com/documentation/unreal-engine/gameplay-ability-system-for-unreal-engine">Gameplay Ability System</a>
+      <a href="https://dev.epicgames.com/documentation/unreal-engine/overview-of-state-tree-in-unreal-engine">State Tree</a>
+      <a href="https://dev.epicgames.com/documentation/unreal-engine/mass-entity-in-unreal-engine">Mass Entity</a>
+      <a href="https://dev.epicgames.com/documentation/unreal-engine/procedural-content-generation-overview">Procedural Content Generation (PCG)</a>
+    </div>
+  
+    <p style="margin:18px 0 0;font-size:13.5px;color:var(--ink-2)">
+      Want to test whether this stuck? <a href="../../practices/framework-placement/index.html">Run the Framework Placement Bench</a> &mdash;
+      twelve pieces of game state to place, graded against five situations instead of one.
+    </p>
+  </section>
+</div>
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------- C++ highlighting, no external library ----------------
+     The code blocks ship as escaped HTML. Reading textContent hands back the
+     raw source, so the tokenizer never sees an entity and never double-escapes. */
+
+  var TOKENS = new RegExp([
+    "(\\/\\/[^\\n]*)",                                   // 1 comment
+    "(\"(?:\\\\.|[^\"\\\\\\n])*\")",                     // 2 string
+    "(#\\s*\\w+)",                                       // 3 preprocessor
+    "\\b(UCLASS|UPROPERTY|UFUNCTION|USTRUCT|UENUM|UINTERFACE|GENERATED_BODY" +
+      "|DECLARE_\\w+|DOREPLIFETIME\\w*|ATTRIBUTE_ACCESSORS|GAMEPLAYATTRIBUTE_\\w+" +
+      "|SCENE_QUERY_STAT|TEXT|check|checkf|ensure)\\b",  // 4 UE macros
+    "\\b(\\d+\\.?\\d*f?)\\b",                            // 5 number
+    "\\b([UAFTIE][A-Z]\\w*)\\b",                         // 6 UE type
+    "\\b(class|struct|public|protected|private|virtual|override|const|constexpr" +
+      "|static|return|if|else|for|while|do|switch|case|break|continue|void|bool" +
+      "|float|double|int32|int64|uint8|uint32|char|auto|true|false|nullptr|this" +
+      "|new|delete|template|typename|namespace|using|enum|inline|explicit)\\b"
+  ].join("|"), "g");
+
+  function esc(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function highlight(src) {
+    var out = "", last = 0, m;
+    TOKENS.lastIndex = 0;
+    while ((m = TOKENS.exec(src)) !== null) {
+      out += esc(src.slice(last, m.index));
+      var cls = m[1] ? "c" : m[2] ? "s" : (m[3] || m[4]) ? "p" : m[5] ? "n" : m[6] ? "t" : "k";
+      out += '<span class="' + cls + '">' + esc(m[0]) + "</span>";
+      last = m.index + m[0].length;
+    }
+    return out + esc(src.slice(last));
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll("pre code"), function (el) {
+    try { el.innerHTML = highlight(el.textContent); } catch (e) { /* leave it plain */ }
+  });
+
+  /* ---------------- filter every row on the page ---------------- */
+
+  var q = document.getElementById("q");
+  var count = document.getElementById("count");
+  var sections = Array.prototype.slice.call(document.querySelectorAll("section[data-sec]"));
+
+  function apply() {
+    var term = q.value.trim().toLowerCase();
+    var shown = 0;
+
+    sections.forEach(function (sec) {
+      var rows = sec.querySelectorAll("[data-row]");
+      var any = false;
+
+      // A parent li's textContent already contains its children's text, so a
+      // matching child keeps its ancestors visible without extra bookkeeping.
+      Array.prototype.forEach.call(rows, function (row) {
+        var hit = !term || row.textContent.toLowerCase().indexOf(term) !== -1;
+        row.hidden = !hit;
+        if (hit) { any = true; shown++; }
+      });
+
+      sec.hidden = !!term && rows.length > 0 && !any;
+    });
+
+    count.textContent = term ? shown + " matching" : "";
+  }
+
+  q.addEventListener("input", apply);
+  q.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { q.value = ""; apply(); }
+  });
+})();
+</script>
+</body>
+</html>

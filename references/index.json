@@ -1,0 +1,16 @@
+[
+  {
+    "id": "unreal-gameplay-framework",
+    "menu": "Framework map",
+    "title": "Gameplay Framework Map",
+    "summary": "Every class family in Unreal — core objects, actors, components, the framework eight, subsystems, input, AI, animation, physics, rendering, audio, UI, networking, abilities, data — with what each one owns, C++ examples, the lifecycle order, and a table for deciding where a piece of logic belongs. Filter box at the top searches every row.",
+    "why": "Look-up material, not a drill. The placement practice asks you to decide; this is what you check the decision against, and what to reach for when the question is which class a feature belongs in.",
+    "topics": [
+      "unreal",
+      "gameplay framework",
+      "c++"
+    ],
+    "added": "2026-09-04",
+    "href": "references/unreal-gameplay-framework/index.html"
+  }
+]

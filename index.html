@@ -16,6 +16,8 @@
     <p class="eyebrow">Practice lab</p>
     <h2>Practices</h2>
     <nav aria-label="All practices"><ul id="nav"></ul></nav>
+    <h2 class="second" data-ref-head hidden>Reference</h2>
+    <nav aria-label="All references"><ul id="refnav"></ul></nav>
     <p class="count" id="count"></p>
   </aside>
 
@@ -25,6 +27,14 @@
       <p>Small single-page tools for the maths and mechanics behind game code. Each one lets you write the answer yourself, draws what you wrote, and tells you when it only works by accident.</p>
     </div>
     <div class="cards" id="cards"></div>
+
+    <section class="refs" id="refs" hidden aria-label="Reference">
+      <div class="refs-head">
+        <h2>Reference</h2>
+        <p>Look-up material rather than a drill. Open it beside a practice, or on its own when you need to check where something belongs.</p>
+      </div>
+      <div class="reflist" id="reflist"></div>
+    </section>
 
     <footer class="colophon">
       <p>Created by Claude, built with <a href="https://claude.com/claude-code">Claude Code</a>, while working through the problems each practice is about.</p>
