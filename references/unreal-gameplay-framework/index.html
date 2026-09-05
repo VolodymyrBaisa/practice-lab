@@ -328,23 +328,23 @@ ol.steps .hi{color:var(--accent);font-weight:500}
     <div class="scroller">
       <div class="tree">
         <ul>
-          <li>
+          <li data-row>
             <div class="node"><span class="pfx pfx-u">U</span><code>UObject</code><span class="desc">Root of the reflected type system: garbage collection, serialization, replication, Blueprint exposure, <em>GetWorld()</em>, and the CDO (Class Default Object) that holds your constructor's values.</span><span></span></div>
             <ul>
-              <li><div class="node"><span class="pfx pfx-u">U</span><code>UStruct</code><span class="desc">Anything that owns a property list.</span><span></span></div>
+              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UStruct</code><span class="desc">Anything that owns a property list.</span><span></span></div>
                 <ul>
-                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UClass</code><span class="desc">Runtime type info for a UObject class. What <em>StaticClass()</em>, <em>GetClass()</em> and <em>SpawnActor&lt;T&gt;</em> actually pass around.</span><span></span></div></li>
-                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UScriptStruct</code><span class="desc">Reflection for a <em>USTRUCT()</em> — lets a plain struct appear in Blueprint and replicate.</span><span></span></div></li>
-                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UFunction</code><span class="desc">Reflection for a <em>UFUNCTION()</em>. How Blueprint calls C++, and how RPCs are routed over the wire.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UClass</code><span class="desc">Runtime type info for a UObject class. What <em>StaticClass()</em>, <em>GetClass()</em> and <em>SpawnActor&lt;T&gt;</em> actually pass around.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UScriptStruct</code><span class="desc">Reflection for a <em>USTRUCT()</em> — lets a plain struct appear in Blueprint and replicate.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UFunction</code><span class="desc">Reflection for a <em>UFUNCTION()</em>. How Blueprint calls C++, and how RPCs are routed over the wire.</span><span></span></div></li>
                 </ul>
               </li>
-              <li><div class="node"><span class="pfx pfx-u">F</span><code>FProperty</code><span class="desc">Reflection for a <em>UPROPERTY()</em>. Was <code>UProperty</code> before 4.25 — old tutorials still say the wrong name.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-u">U</span><code>UPackage</code><span class="desc">One <em>.uasset</em> file loaded into memory. The unit of save, load and cook.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-u">U</span><code>UBlueprint</code><span class="desc">The editor-only asset. At runtime you never touch it — you get its compiled <em>UBlueprintGeneratedClass</em>.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-u">U</span><code>UInterface</code><span class="desc">Declared as a <code>U…</code>/<code>I…</code> pair. A behavior contract shared by classes with no common ancestor.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-u">U</span><code>UEngine</code><span class="desc">Process root. <em>UGameEngine</em> in a packaged build, <em>UEditorEngine</em> in the editor. Reachable as <em>GEngine</em>.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-u">U</span><code>UGameViewportClient</code><span class="desc">The window the game renders into. Routes raw input to the right <em>ULocalPlayer</em>, owns split-screen layout.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-u">U</span><code>UDeveloperSettings</code><span class="desc">Subclass it and your properties appear in Project Settings automatically, backed by a config <em>.ini</em>.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-u">F</span><code>FProperty</code><span class="desc">Reflection for a <em>UPROPERTY()</em>. Was <code>UProperty</code> before 4.25 — old tutorials still say the wrong name.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UPackage</code><span class="desc">One <em>.uasset</em> file loaded into memory. The unit of save, load and cook.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UBlueprint</code><span class="desc">The editor-only asset. At runtime you never touch it — you get its compiled <em>UBlueprintGeneratedClass</em>.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UInterface</code><span class="desc">Declared as a <code>U…</code>/<code>I…</code> pair. A behavior contract shared by classes with no common ancestor.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UEngine</code><span class="desc">Process root. <em>UGameEngine</em> in a packaged build, <em>UEditorEngine</em> in the editor. Reachable as <em>GEngine</em>.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UGameViewportClient</code><span class="desc">The window the game renders into. Routes raw input to the right <em>ULocalPlayer</em>, owns split-screen layout.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UDeveloperSettings</code><span class="desc">Subclass it and your properties appear in Project Settings automatically, backed by a config <em>.ini</em>.</span><span></span></div></li>
             </ul>
           </li>
         </ul>
@@ -465,62 +465,62 @@ AProjectile* P = GetWorld()-&gt;SpawnActor&lt;AProjectile&gt;(
     <div class="scroller">
       <div class="tree">
         <ul>
-          <li>
+          <li data-row>
             <div class="node"><span class="pfx pfx-a">A</span><code>AActor</code><span class="desc">Placeable and spawnable. Owns components, replicates, and runs <em>BeginPlay / Tick / EndPlay / Destroyed</em>.</span><span></span></div>
             <ul>
-              <li>
+              <li data-row>
                 <div class="node"><span class="pfx pfx-a">A</span><code>APawn</code><span class="desc">The <strong>body</strong>. An Actor a Controller can possess; accepts input and has a view rotation.</span><span class="badge b-rep">replicated to all</span></div>
                 <ul>
-                  <li><div class="node"><span class="pfx pfx-a">A</span><code>ACharacter</code><span class="desc">Pawn + capsule + <em>UCharacterMovementComponent</em> + skeletal mesh. Walk, jump, crouch, swim, with network prediction already solved.</span><span></span></div></li>
-                  <li><div class="node"><span class="pfx pfx-a">A</span><code>ADefaultPawn</code><span class="desc">Flying debug pawn, input and movement pre-wired.</span><span></span></div></li>
-                  <li><div class="node"><span class="pfx pfx-a">A</span><code>ASpectatorPawn</code><span class="desc">Collisionless observer used between respawns and in spectator mode.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>ACharacter</code><span class="desc">Pawn + capsule + <em>UCharacterMovementComponent</em> + skeletal mesh. Walk, jump, crouch, swim, with network prediction already solved.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>ADefaultPawn</code><span class="desc">Flying debug pawn, input and movement pre-wired.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>ASpectatorPawn</code><span class="desc">Collisionless observer used between respawns and in spectator mode.</span><span></span></div></li>
                 </ul>
               </li>
-              <li>
+              <li data-row>
                 <div class="node"><span class="pfx pfx-a">A</span><code>AController</code><span class="desc">The <strong>will</strong>. Non-physical; possesses a Pawn and outlives it.</span><span></span></div>
                 <ul>
-                  <li><div class="node"><span class="pfx pfx-a">A</span><code>APlayerController</code><span class="desc">A human's will: input, UI focus, respawn requests, client&#8596;server RPCs.</span><span class="badge b-loc">local client only</span></div></li>
-                  <li><div class="node"><span class="pfx pfx-a">A</span><code>AAIController</code><span class="desc">A simulated will: behavior tree, blackboard, perception, pathfinding.</span><span class="badge b-srv">server only</span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>APlayerController</code><span class="desc">A human's will: input, UI focus, respawn requests, client&#8596;server RPCs.</span><span class="badge b-loc">local client only</span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>AAIController</code><span class="desc">A simulated will: behavior tree, blackboard, perception, pathfinding.</span><span class="badge b-srv">server only</span></div></li>
                 </ul>
               </li>
-              <li>
+              <li data-row>
                 <div class="node"><span class="pfx pfx-a">A</span><code>AInfo</code><span class="desc">An Actor with no transform and nothing to render — a pure manager. Every framework "brain" lives here.</span><span></span></div>
                 <ul>
-                  <li><div class="node"><span class="pfx pfx-a">A</span><code>AGameModeBase</code><span class="desc">The rules. Spawned first on level load and spawns the rest of the framework.</span><span class="badge b-srv">server only</span></div></li>
-                  <li><div class="node"><span class="pfx pfx-a">A</span><code>AGameMode</code><span class="desc">Adds a match state machine — <em>WaitingToStart / InProgress / WaitingPostMatch</em>.</span><span class="badge b-srv">server only</span></div></li>
-                  <li><div class="node"><span class="pfx pfx-a">A</span><code>AGameStateBase</code><span class="desc">Match state everyone must see, plus the array of every <em>APlayerState</em>.</span><span class="badge b-rep">replicated to all</span></div></li>
-                  <li><div class="node"><span class="pfx pfx-a">A</span><code>APlayerState</code><span class="desc">One participant's state. Survives the Pawn dying.</span><span class="badge b-rep">replicated to all</span></div></li>
-                  <li><div class="node"><span class="pfx pfx-a">A</span><code>AGameSession</code><span class="desc">Login approval, max player count, kick/ban, online session registration.</span><span class="badge b-srv">server only</span></div></li>
-                  <li><div class="node"><span class="pfx pfx-a">A</span><code>AGameNetworkManager</code><span class="desc">Movement error tolerances and speed-hack thresholds — the anti-cheat dials.</span><span class="badge b-srv">server only</span></div></li>
-                  <li><div class="node"><span class="pfx pfx-a">A</span><code>AWorldSettings</code><span class="desc">Per-map gravity, kill Z, GameMode override.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>AGameModeBase</code><span class="desc">The rules. Spawned first on level load and spawns the rest of the framework.</span><span class="badge b-srv">server only</span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>AGameMode</code><span class="desc">Adds a match state machine — <em>WaitingToStart / InProgress / WaitingPostMatch</em>.</span><span class="badge b-srv">server only</span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>AGameStateBase</code><span class="desc">Match state everyone must see, plus the array of every <em>APlayerState</em>.</span><span class="badge b-rep">replicated to all</span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>APlayerState</code><span class="desc">One participant's state. Survives the Pawn dying.</span><span class="badge b-rep">replicated to all</span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>AGameSession</code><span class="desc">Login approval, max player count, kick/ban, online session registration.</span><span class="badge b-srv">server only</span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>AGameNetworkManager</code><span class="desc">Movement error tolerances and speed-hack thresholds — the anti-cheat dials.</span><span class="badge b-srv">server only</span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>AWorldSettings</code><span class="desc">Per-map gravity, kill Z, GameMode override.</span><span></span></div></li>
                 </ul>
               </li>
-              <li><div class="node"><span class="pfx pfx-a">A</span><code>AHUD</code><span class="desc">Per-player immediate-mode canvas drawing. In modern UE this is debug overlays only — real UI is UMG.</span><span class="badge b-loc">local client only</span></div></li>
-              <li><div class="node"><span class="pfx pfx-a">A</span><code>APlayerCameraManager</code><span class="desc">Computes the final view each frame: blends, fades, camera shakes, post-process overrides.</span><span class="badge b-loc">local client only</span></div></li>
-              <li>
+              <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>AHUD</code><span class="desc">Per-player immediate-mode canvas drawing. In modern UE this is debug overlays only — real UI is UMG.</span><span class="badge b-loc">local client only</span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>APlayerCameraManager</code><span class="desc">Computes the final view each frame: blends, fades, camera shakes, post-process overrides.</span><span class="badge b-loc">local client only</span></div></li>
+              <li data-row>
                 <div class="node"><span class="pfx pfx-a">A</span><code>AVolume</code><span class="desc">A shape with no visual.</span><span></span></div>
                 <ul>
-                  <li><div class="node"><span class="pfx pfx-a">A</span><code>ATriggerVolume</code><span class="desc">Fires overlap events. Siblings: <em>ATriggerBox</em>, <em>ATriggerSphere</em>, <em>ATriggerCapsule</em>.</span><span></span></div></li>
-                  <li><div class="node"><span class="pfx pfx-a">A</span><code>ABlockingVolume</code><span class="desc">Invisible collision — keeps players out of geometry gaps.</span><span></span></div></li>
-                  <li><div class="node"><span class="pfx pfx-a">A</span><code>APostProcessVolume</code><span class="desc">Localised post-process settings with a blend radius.</span><span></span></div></li>
-                  <li><div class="node"><span class="pfx pfx-a">A</span><code>APhysicsVolume</code><span class="desc">Overrides gravity, friction and water state inside its bounds.</span><span></span></div></li>
-                  <li><div class="node"><span class="pfx pfx-a">A</span><code>ANavMeshBoundsVolume</code><span class="desc">Where navmesh gets built. Sibling: <em>ANavModifierVolume</em> for cost and area overrides.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>ATriggerVolume</code><span class="desc">Fires overlap events. Siblings: <em>ATriggerBox</em>, <em>ATriggerSphere</em>, <em>ATriggerCapsule</em>.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>ABlockingVolume</code><span class="desc">Invisible collision — keeps players out of geometry gaps.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>APostProcessVolume</code><span class="desc">Localised post-process settings with a blend radius.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>APhysicsVolume</code><span class="desc">Overrides gravity, friction and water state inside its bounds.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>ANavMeshBoundsVolume</code><span class="desc">Where navmesh gets built. Sibling: <em>ANavModifierVolume</em> for cost and area overrides.</span><span></span></div></li>
                 </ul>
               </li>
-              <li><div class="node"><span class="pfx pfx-a">A</span><code>APlayerStart</code><span class="desc">A tagged spawn transform the GameMode picks from in <em>ChoosePlayerStart</em>.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-a">A</span><code>AStaticMeshActor</code><span class="desc">Thin wrapper around one component. Siblings: <em>ASkeletalMeshActor</em>, <em>ADecalActor</em>, <em>AEmitter</em>, <em>ANiagaraActor</em>, <em>AAmbientSound</em>.</span><span></span></div></li>
-              <li>
+              <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>APlayerStart</code><span class="desc">A tagged spawn transform the GameMode picks from in <em>ChoosePlayerStart</em>.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>AStaticMeshActor</code><span class="desc">Thin wrapper around one component. Siblings: <em>ASkeletalMeshActor</em>, <em>ADecalActor</em>, <em>AEmitter</em>, <em>ANiagaraActor</em>, <em>AAmbientSound</em>.</span><span></span></div></li>
+              <li data-row>
                 <div class="node"><span class="pfx pfx-a">A</span><code>ALight</code><span class="desc">Light actors.</span><span></span></div>
                 <ul>
-                  <li><div class="node"><span class="pfx pfx-a">A</span><code>ADirectionalLight</code><span class="desc">Sun. Siblings: <em>APointLight</em>, <em>ASpotLight</em>, <em>ARectLight</em>, <em>ASkyLight</em>.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>ADirectionalLight</code><span class="desc">Sun. Siblings: <em>APointLight</em>, <em>ASpotLight</em>, <em>ARectLight</em>, <em>ASkyLight</em>.</span><span></span></div></li>
                 </ul>
               </li>
-              <li><div class="node"><span class="pfx pfx-a">A</span><code>ACameraActor</code><span class="desc">A placeable view point. <em>ACineCameraActor</em> adds real lens, focus and aperture controls.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-a">A</span><code>ARecastNavMesh</code><span class="desc">The generated navigation mesh asset-actor the AI paths on.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-a">A</span><code>ALandscape</code><span class="desc">Heightfield terrain. <em>ALandscapeProxy</em> is one streamed piece of it.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-a">A</span><code>AInstancedFoliageActor</code><span class="desc">Holds every painted foliage instance for a level.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-a">A</span><code>ALevelScriptActor</code><span class="desc">The Level Blueprint.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-a">A</span><code>ASkyAtmosphere</code><span class="desc">Physical sky. Siblings: <em>AExponentialHeightFog</em>, <em>AVolumetricCloud</em>, <em>ASphereReflectionCapture</em>.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>ACameraActor</code><span class="desc">A placeable view point. <em>ACineCameraActor</em> adds real lens, focus and aperture controls.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>ARecastNavMesh</code><span class="desc">The generated navigation mesh asset-actor the AI paths on.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>ALandscape</code><span class="desc">Heightfield terrain. <em>ALandscapeProxy</em> is one streamed piece of it.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>AInstancedFoliageActor</code><span class="desc">Holds every painted foliage instance for a level.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>ALevelScriptActor</code><span class="desc">The Level Blueprint.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>ASkyAtmosphere</code><span class="desc">Physical sky. Siblings: <em>AExponentialHeightFog</em>, <em>AVolumetricCloud</em>, <em>ASphereReflectionCapture</em>.</span><span></span></div></li>
             </ul>
           </li>
         </ul>
@@ -564,79 +564,79 @@ PrimaryActorTick.bCanEverTick = false;</code></pre>
     <div class="scroller">
       <div class="tree">
         <ul>
-          <li>
+          <li data-row>
             <div class="node"><span class="pfx pfx-u">U</span><code>UActorComponent</code><span class="desc">Reusable behavior bolted onto an Actor. No transform. Ticks, replicates, and can be added by Blueprint or at runtime.</span><span></span></div>
             <ul>
-              <li>
+              <li data-row>
                 <div class="node"><span class="pfx pfx-u">U</span><code>USceneComponent</code><span class="desc">Adds a transform. Can attach to a parent and to sockets; forms the actor's component tree.</span><span></span></div>
                 <ul>
-                  <li>
+                  <li data-row>
                     <div class="node"><span class="pfx pfx-u">U</span><code>UPrimitiveComponent</code><span class="desc">Adds geometry, so it renders and collides. <strong>All collision, overlap and hit events originate here.</strong> Owns an <em>FBodyInstance</em>.</span><span></span></div>
                     <ul>
-                      <li>
+                      <li data-row>
                         <div class="node"><span class="pfx pfx-u">U</span><code>UMeshComponent</code><span class="desc">Anything with materials.</span><span></span></div>
                         <ul>
-                          <li><div class="node"><span class="pfx pfx-u">U</span><code>UStaticMeshComponent</code><span class="desc">Rigid geometry.</span><span></span></div>
+                          <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UStaticMeshComponent</code><span class="desc">Rigid geometry.</span><span></span></div>
                             <ul>
-                              <li><div class="node"><span class="pfx pfx-u">U</span><code>UInstancedStaticMeshComponent</code><span class="desc">Many copies, one draw call. <em>UHierarchicalInstancedStaticMeshComponent</em> adds LOD and culling per instance — what foliage uses.</span><span></span></div></li>
-                              <li><div class="node"><span class="pfx pfx-u">U</span><code>USplineMeshComponent</code><span class="desc">A mesh deformed along a spline — roads, cables, pipes.</span><span></span></div></li>
+                              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UInstancedStaticMeshComponent</code><span class="desc">Many copies, one draw call. <em>UHierarchicalInstancedStaticMeshComponent</em> adds LOD and culling per instance — what foliage uses.</span><span></span></div></li>
+                              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>USplineMeshComponent</code><span class="desc">A mesh deformed along a spline — roads, cables, pipes.</span><span></span></div></li>
                             </ul>
                           </li>
-                          <li><div class="node"><span class="pfx pfx-u">U</span><code>USkinnedMeshComponent</code><span class="desc">Skinned geometry.</span><span></span></div>
+                          <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>USkinnedMeshComponent</code><span class="desc">Skinned geometry.</span><span></span></div>
                             <ul>
-                              <li><div class="node"><span class="pfx pfx-u">U</span><code>USkeletalMeshComponent</code><span class="desc">Skinned mesh + an <em>UAnimInstance</em> + optional physics asset for ragdoll. The single busiest component in most games.</span><span></span></div></li>
+                              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>USkeletalMeshComponent</code><span class="desc">Skinned mesh + an <em>UAnimInstance</em> + optional physics asset for ragdoll. The single busiest component in most games.</span><span></span></div></li>
                             </ul>
                           </li>
-                          <li><div class="node"><span class="pfx pfx-u">U</span><code>UProceduralMeshComponent</code><span class="desc">Runtime-built geometry. <em>UDynamicMeshComponent</em> is the newer GeometryScript-friendly one.</span><span></span></div></li>
+                          <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UProceduralMeshComponent</code><span class="desc">Runtime-built geometry. <em>UDynamicMeshComponent</em> is the newer GeometryScript-friendly one.</span><span></span></div></li>
                         </ul>
                       </li>
-                      <li>
+                      <li data-row>
                         <div class="node"><span class="pfx pfx-u">U</span><code>UShapeComponent</code><span class="desc">Invisible collision primitives — the cheapest colliders available.</span><span></span></div>
                         <ul>
-                          <li><div class="node"><span class="pfx pfx-u">U</span><code>UCapsuleComponent</code><span class="desc">The Character's root collider. Siblings: <em>UBoxComponent</em>, <em>USphereComponent</em>.</span><span></span></div></li>
+                          <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UCapsuleComponent</code><span class="desc">The Character's root collider. Siblings: <em>UBoxComponent</em>, <em>USphereComponent</em>.</span><span></span></div></li>
                         </ul>
                       </li>
-                      <li><div class="node"><span class="pfx pfx-u">U</span><code>USplineComponent</code><span class="desc">A path in space. Query points, tangents and distances along it.</span><span></span></div></li>
-                      <li><div class="node"><span class="pfx pfx-u">U</span><code>UWidgetComponent</code><span class="desc">A UMG widget rendered in the 3D world — nameplates, world-space UI.</span><span></span></div></li>
-                      <li><div class="node"><span class="pfx pfx-u">U</span><code>UNiagaraComponent</code><span class="desc">A running VFX system instance.</span><span></span></div></li>
-                      <li><div class="node"><span class="pfx pfx-u">U</span><code>UArrowComponent</code><span class="desc">Editor-only gizmo. Sibling: <em>UBillboardComponent</em>.</span><span></span></div></li>
+                      <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>USplineComponent</code><span class="desc">A path in space. Query points, tangents and distances along it.</span><span></span></div></li>
+                      <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UWidgetComponent</code><span class="desc">A UMG widget rendered in the 3D world — nameplates, world-space UI.</span><span></span></div></li>
+                      <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UNiagaraComponent</code><span class="desc">A running VFX system instance.</span><span></span></div></li>
+                      <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UArrowComponent</code><span class="desc">Editor-only gizmo. Sibling: <em>UBillboardComponent</em>.</span><span></span></div></li>
                     </ul>
                   </li>
-                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UCameraComponent</code><span class="desc">A view point. <em>UCineCameraComponent</em> adds lens, focus, aperture.</span><span></span></div></li>
-                  <li><div class="node"><span class="pfx pfx-u">U</span><code>USpringArmComponent</code><span class="desc">A collision-aware camera boom with lag. The third-person camera in one component.</span><span></span></div></li>
-                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UAudioComponent</code><span class="desc">A positioned, controllable sound instance — pause, fade, set parameters.</span><span></span></div></li>
-                  <li><div class="node"><span class="pfx pfx-u">U</span><code>ULightComponentBase</code><span class="desc">→ <em>ULightComponent</em> → <em>UDirectionalLightComponent</em>, <em>UPointLightComponent</em> → <em>USpotLightComponent</em>, <em>URectLightComponent</em>; <em>USkyLightComponent</em>.</span><span></span></div></li>
-                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UDecalComponent</code><span class="desc">Projects a material onto surfaces — bullet holes, blood, tyre marks.</span><span></span></div></li>
-                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UPostProcessComponent</code><span class="desc">Post-process settings attached to an actor rather than a volume.</span><span></span></div></li>
-                  <li><div class="node"><span class="pfx pfx-u">U</span><code>USceneCaptureComponent2D</code><span class="desc">Renders the scene into a <em>UTextureRenderTarget2D</em> — mirrors, security cameras, portals, data bakes.</span><span></span></div></li>
-                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UChildActorComponent</code><span class="desc">Spawns and owns a whole Actor as a component. Convenient, and a common source of surprise costs.</span><span></span></div></li>
-                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UPhysicsConstraintComponent</code><span class="desc">A joint between two physics bodies — hinges, ropes, ragdoll limits.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UCameraComponent</code><span class="desc">A view point. <em>UCineCameraComponent</em> adds lens, focus, aperture.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>USpringArmComponent</code><span class="desc">A collision-aware camera boom with lag. The third-person camera in one component.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UAudioComponent</code><span class="desc">A positioned, controllable sound instance — pause, fade, set parameters.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>ULightComponentBase</code><span class="desc">→ <em>ULightComponent</em> → <em>UDirectionalLightComponent</em>, <em>UPointLightComponent</em> → <em>USpotLightComponent</em>, <em>URectLightComponent</em>; <em>USkyLightComponent</em>.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UDecalComponent</code><span class="desc">Projects a material onto surfaces — bullet holes, blood, tyre marks.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UPostProcessComponent</code><span class="desc">Post-process settings attached to an actor rather than a volume.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>USceneCaptureComponent2D</code><span class="desc">Renders the scene into a <em>UTextureRenderTarget2D</em> — mirrors, security cameras, portals, data bakes.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UChildActorComponent</code><span class="desc">Spawns and owns a whole Actor as a component. Convenient, and a common source of surprise costs.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UPhysicsConstraintComponent</code><span class="desc">A joint between two physics bodies — hinges, ropes, ragdoll limits.</span><span></span></div></li>
                 </ul>
               </li>
-              <li>
+              <li data-row>
                 <div class="node"><span class="pfx pfx-u">U</span><code>UMovementComponent</code><span class="desc">Moves an <em>UpdatedComponent</em>; renders nothing itself.</span><span></span></div>
                 <ul>
-                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UNavMovementComponent</code><span class="desc">→ <em>UPawnMovementComponent</em>, the base for anything a Controller drives.</span><span></span></div>
+                  <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UNavMovementComponent</code><span class="desc">→ <em>UPawnMovementComponent</em>, the base for anything a Controller drives.</span><span></span></div>
                     <ul>
-                      <li><div class="node"><span class="pfx pfx-u">U</span><code>UCharacterMovementComponent</code><span class="desc">Movement modes, root motion, crouching, and full client-side prediction with server correction. The largest class most projects ever touch.</span><span></span></div></li>
-                      <li><div class="node"><span class="pfx pfx-u">U</span><code>UFloatingPawnMovement</code><span class="desc">Simple fly/hover movement with no gravity.</span><span></span></div></li>
+                      <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UCharacterMovementComponent</code><span class="desc">Movement modes, root motion, crouching, and full client-side prediction with server correction. The largest class most projects ever touch.</span><span></span></div></li>
+                      <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UFloatingPawnMovement</code><span class="desc">Simple fly/hover movement with no gravity.</span><span></span></div></li>
                     </ul>
                   </li>
-                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UProjectileMovementComponent</code><span class="desc">Ballistic, homing and bouncing motion.</span><span></span></div></li>
-                  <li><div class="node"><span class="pfx pfx-u">U</span><code>URotatingMovementComponent</code><span class="desc">Constant spin with no physics cost.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UProjectileMovementComponent</code><span class="desc">Ballistic, homing and bouncing motion.</span><span></span></div></li>
+                  <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>URotatingMovementComponent</code><span class="desc">Constant spin with no physics cost.</span><span></span></div></li>
                 </ul>
               </li>
-              <li><div class="node"><span class="pfx pfx-u">U</span><code>UInputComponent</code><span class="desc">Binds input to functions. <em>UEnhancedInputComponent</em> is the current one.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-u">U</span><code>UBrainComponent</code><span class="desc">→ <em>UBehaviorTreeComponent</em>, the AI's running logic.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-u">U</span><code>UBlackboardComponent</code><span class="desc">The AI's key/value working memory.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-u">U</span><code>UAIPerceptionComponent</code><span class="desc">Sight, hearing and damage senses; reports stimuli to the controller.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-u">U</span><code>UPathFollowingComponent</code><span class="desc">Walks a computed path. <em>UCrowdFollowingComponent</em> adds avoidance.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-u">U</span><code>UAbilitySystemComponent</code><span class="desc">The GAS bridge — abilities, effects, attributes, tags.</span><span class="badge b-plug">plugin</span></div></li>
-              <li><div class="node"><span class="pfx pfx-u">U</span><code>UTimelineComponent</code><span class="desc">The C++ side of a Blueprint Timeline — curve-driven values over time.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-u">U</span><code>UPhysicsHandleComponent</code><span class="desc">Grab and drag a physics body — the gravity-gun component.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-u">U</span><code>URadialForceComponent</code><span class="desc">Explosion impulses and radial damage falloff.</span><span></span></div></li>
-              <li><div class="node"><span class="pfx pfx-u">U</span><code>UPCGComponent</code><span class="desc">Runs a PCG graph using this actor's bounds as input.</span><span class="badge b-plug">plugin</span></div></li>
-              <li><div class="node"><span class="pfx pfx-u">U</span><code>UStateTreeComponent</code><span class="desc">Runs a StateTree on this actor — the newer alternative to a behavior tree.</span><span class="badge b-plug">plugin</span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UInputComponent</code><span class="desc">Binds input to functions. <em>UEnhancedInputComponent</em> is the current one.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UBrainComponent</code><span class="desc">→ <em>UBehaviorTreeComponent</em>, the AI's running logic.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UBlackboardComponent</code><span class="desc">The AI's key/value working memory.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UAIPerceptionComponent</code><span class="desc">Sight, hearing and damage senses; reports stimuli to the controller.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UPathFollowingComponent</code><span class="desc">Walks a computed path. <em>UCrowdFollowingComponent</em> adds avoidance.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UAbilitySystemComponent</code><span class="desc">The GAS bridge — abilities, effects, attributes, tags.</span><span class="badge b-plug">plugin</span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UTimelineComponent</code><span class="desc">The C++ side of a Blueprint Timeline — curve-driven values over time.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UPhysicsHandleComponent</code><span class="desc">Grab and drag a physics body — the gravity-gun component.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>URadialForceComponent</code><span class="desc">Explosion impulses and radial damage falloff.</span><span></span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UPCGComponent</code><span class="desc">Runs a PCG graph using this actor's bounds as input.</span><span class="badge b-plug">plugin</span></div></li>
+              <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UStateTreeComponent</code><span class="desc">Runs a StateTree on this actor — the newer alternative to a behavior tree.</span><span class="badge b-plug">plugin</span></div></li>
             </ul>
           </li>
         </ul>
@@ -728,45 +728,45 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray&lt;FLifetimeProperty&gt
     <div class="scroller">
       <div class="tree">
         <ul>
-          <li>
+          <li data-row>
             <div class="node"><span class="pfx pfx-u">U</span><code>UGameEngine</code><span class="desc">The process.</span><span></span></div>
             <ul>
-              <li>
+              <li data-row>
                 <div class="node"><span class="pfx pfx-u">U</span><code>UGameInstance</code><span class="desc">One per process — the server has one, every client has its own. Never replicated. <strong>The only gameplay object that survives level travel.</strong></span><span class="badge b-none">per machine</span></div>
                 <ul>
-                  <li><div class="node"><span class="pfx pfx-u">U</span><code>UGameInstanceSubsystem</code><span class="desc">Settings, save data, audio state, account session — anything that must outlive the map.</span><span></span></div></li>
-                  <li>
+                  <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UGameInstanceSubsystem</code><span class="desc">Settings, save data, audio state, account session — anything that must outlive the map.</span><span></span></div></li>
+                  <li data-row>
                     <div class="node"><span class="pfx pfx-u">U</span><code>ULocalPlayer</code><span class="desc">A human seated at <em>this</em> machine — one per split-screen player. Owns the viewport slot.</span><span class="badge b-loc">local client only</span></div>
                     <ul>
-                      <li><div class="node"><span class="pfx pfx-u">U</span><code>ULocalPlayerSubsystem</code><span class="desc">Input mapping contexts, UI layer stack, per-seat preferences.</span><span></span></div></li>
+                      <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>ULocalPlayerSubsystem</code><span class="desc">Input mapping contexts, UI layer stack, per-seat preferences.</span><span></span></div></li>
                     </ul>
                   </li>
-                  <li>
+                  <li data-row>
                     <div class="node"><span class="pfx pfx-u">U</span><code>UWorld</code><span class="desc">The currently loaded map. Replaced wholesale on level travel.</span><span></span></div>
                     <ul>
-                      <li><div class="node"><span class="pfx pfx-u">U</span><code>UWorldSubsystem</code><span class="desc">Managers scoped to this map only — wave director, weather, spawn budget.</span><span></span></div></li>
-                      <li><div class="node"><span class="pfx pfx-a">A</span><code>AGameModeBase</code><span class="desc">Spawned first, then spawns everything below it.</span><span class="badge b-srv">server only</span></div></li>
-                      <li><div class="node"><span class="pfx pfx-a">A</span><code>AGameStateBase</code><span class="desc">Spawned by the GameMode from its <em>GameStateClass</em>. Holds <em>PlayerArray</em>.</span><span class="badge b-rep">replicated to all</span></div></li>
-                      <li>
+                      <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UWorldSubsystem</code><span class="desc">Managers scoped to this map only — wave director, weather, spawn budget.</span><span></span></div></li>
+                      <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>AGameModeBase</code><span class="desc">Spawned first, then spawns everything below it.</span><span class="badge b-srv">server only</span></div></li>
+                      <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>AGameStateBase</code><span class="desc">Spawned by the GameMode from its <em>GameStateClass</em>. Holds <em>PlayerArray</em>.</span><span class="badge b-rep">replicated to all</span></div></li>
+                      <li data-row>
                         <div class="node"><span class="pfx pfx-a">A</span><code>APlayerController</code><span class="desc">One per human. Lives on the server and on that human's own client — client A can never see client B's.</span><span class="badge b-loc">local client only</span></div>
                         <ul>
-                          <li><div class="node"><span class="pfx pfx-a">A</span><code>APlayerState</code><span class="desc">Spawned alongside the controller — but visible on <em>every</em> machine.</span><span class="badge b-rep">replicated to all</span></div></li>
-                          <li><div class="node"><span class="pfx pfx-a">A</span><code>AHUD</code><span class="desc">Canvas drawing surface.</span><span class="badge b-loc">local client only</span></div></li>
-                          <li><div class="node"><span class="pfx pfx-a">A</span><code>APlayerCameraManager</code><span class="desc">The final view for this player.</span><span class="badge b-loc">local client only</span></div></li>
-                          <li><div class="node"><span class="pfx pfx-u">U</span><code>UUserWidget</code><span class="desc">The widget stack this player is looking at.</span><span class="badge b-loc">local client only</span></div></li>
-                          <li><div class="node"><span class="pfx pfx-a">A</span><code>APawn</code><span class="desc">The possessed body. Destroyed on death, re-possessed on respawn.</span><span class="badge b-rep">replicated to all</span></div></li>
+                          <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>APlayerState</code><span class="desc">Spawned alongside the controller — but visible on <em>every</em> machine.</span><span class="badge b-rep">replicated to all</span></div></li>
+                          <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>AHUD</code><span class="desc">Canvas drawing surface.</span><span class="badge b-loc">local client only</span></div></li>
+                          <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>APlayerCameraManager</code><span class="desc">The final view for this player.</span><span class="badge b-loc">local client only</span></div></li>
+                          <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UUserWidget</code><span class="desc">The widget stack this player is looking at.</span><span class="badge b-loc">local client only</span></div></li>
+                          <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>APawn</code><span class="desc">The possessed body. Destroyed on death, re-possessed on respawn.</span><span class="badge b-rep">replicated to all</span></div></li>
                         </ul>
                       </li>
-                      <li>
+                      <li data-row>
                         <div class="node"><span class="pfx pfx-a">A</span><code>AAIController</code><span class="desc">One per bot, from the Pawn's <em>AutoPossessAI</em> setting or spawned by hand.</span><span class="badge b-srv">server only</span></div>
                         <ul>
-                          <li><div class="node"><span class="pfx pfx-a">A</span><code>APawn</code><span class="desc">The bot's body — usually the same Pawn class a human drives.</span><span class="badge b-rep">replicated to all</span></div></li>
+                          <li data-row><div class="node"><span class="pfx pfx-a">A</span><code>APawn</code><span class="desc">The bot's body — usually the same Pawn class a human drives.</span><span class="badge b-rep">replicated to all</span></div></li>
                         </ul>
                       </li>
-                      <li>
+                      <li data-row>
                         <div class="node"><span class="pfx pfx-a">A</span><code>AActor</code><span class="desc">Everything else: pickups, doors, spawners, volumes.</span><span></span></div>
                         <ul>
-                          <li><div class="node"><span class="pfx pfx-u">U</span><code>UActorComponent</code><span class="desc">Health, inventory, interaction, abilities — behavior shared by actors that share no base class.</span><span></span></div></li>
+                          <li data-row><div class="node"><span class="pfx pfx-u">U</span><code>UActorComponent</code><span class="desc">Health, inventory, interaction, abilities — behavior shared by actors that share no base class.</span><span></span></div></li>
                         </ul>
                       </li>
                     </ul>
@@ -2044,7 +2044,14 @@ Async(EAsyncExecution::ThreadPool, [Path]() {
         if (row.hasAttribute("data-hit") && !row.querySelector("[data-row][data-hit]")) shown++;
       });
 
-      sec.hidden = !!term && rows.length > 0 && !any;
+      // Prose sections (the closing note and sources) hold nothing row-shaped,
+      // so match those as a whole instead of leaving them up on every search.
+      if (rows.length === 0) {
+        sec.hidden = !!term && sec.textContent.toLowerCase().indexOf(term) === -1;
+        return;
+      }
+
+      sec.hidden = !!term && !any;
     });
 
     count.textContent = term ? shown + " matching" : "";
