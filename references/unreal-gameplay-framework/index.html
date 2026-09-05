@@ -53,6 +53,8 @@
 }
 
 *{box-sizing:border-box}
+/* Author display rules outrank the UA [hidden] rule, so state it here. */
+[hidden]{display:none!important}
 html{color-scheme:light dark}
 body{
   margin:0;background:var(--ground);color:var(--ink);
@@ -2032,7 +2034,14 @@ Async(EAsyncExecution::ThreadPool, [Path]() {
       Array.prototype.forEach.call(rows, function (row) {
         var hit = !term || row.textContent.toLowerCase().indexOf(term) !== -1;
         row.hidden = !hit;
-        if (hit) { any = true; shown++; }
+        if (hit) { any = true; row.setAttribute("data-hit", ""); }
+        else { row.removeAttribute("data-hit"); }
+      });
+
+      // Count only the deepest hits. A matching child also matches every
+      // ancestor li, so counting every hit reports one find several times.
+      Array.prototype.forEach.call(rows, function (row) {
+        if (row.hasAttribute("data-hit") && !row.querySelector("[data-row][data-hit]")) shown++;
       });
 
       sec.hidden = !!term && rows.length > 0 && !any;
