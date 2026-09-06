@@ -111,6 +111,42 @@ dl.rows dd.lit{color:var(--accent)}
 }
 .code p{margin:0 0 10px;color:var(--ink-2);font-size:14px}
 .note{margin:14px 0 0;font-size:13px;color:var(--ink-2)}
+.pipe{list-style:none;margin:0;padding:0}
+.pipe li{
+  display:grid;grid-template-columns:86px minmax(0,1fr) auto auto;gap:8px 16px;align-items:center;
+  padding:11px 2px;border-bottom:1px solid var(--line);
+}
+.pipe li:last-child{border-bottom:0}
+.pipe .name{
+  font-family:"IBM Plex Sans Condensed",sans-serif;text-transform:uppercase;
+  letter-spacing:.1em;font-size:11px;color:var(--ink-3);
+}
+.pipe .expr{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink-2);overflow-x:auto;display:block;white-space:nowrap}
+.pipe .val{font-family:"IBM Plex Mono",monospace;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink);text-align:right;white-space:nowrap}
+.carry{
+  font-weight:500;color:var(--accent);
+  border-bottom:1px solid var(--accent);padding-bottom:1px;
+}
+.kind{font-family:"IBM Plex Sans Condensed",sans-serif;text-transform:uppercase;letter-spacing:.09em;font-size:10px;padding:3px 9px;border-radius:99px;white-space:nowrap;text-align:center}
+.k-num{background:var(--sunk);color:var(--ink-3)}
+.k-place{background:var(--bad-soft);color:var(--bad-ink)}
+.k-move{background:var(--accent-soft);color:var(--accent-ink)}
+@media (max-width:760px){
+  .pipe li{grid-template-columns:1fr auto;gap:5px 12px}
+  .pipe .name{grid-column:1}
+  .pipe .kind{grid-column:2;justify-self:end}
+  .pipe .expr,.pipe .val{grid-column:1/-1;text-align:left}
+}
+.kinds{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:20px}
+.kinds div{padding:13px 14px;border-radius:9px;background:var(--sunk)}
+.kinds h3{margin:0 0 4px;font-size:13px;font-weight:500}
+.kinds p{margin:0;font-size:13px;color:var(--ink-2)}
+.rules{margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+.rules h3{margin:0 0 10px;font-size:14px;font-weight:500}
+.rules ul{margin:0;padding:0;list-style:none;display:grid;gap:7px}
+.rules li{font-size:13px;color:var(--ink-2)}
+.rules code{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink)}
+.rules li.no code{color:var(--bad)}
 </style>
 </head>
 <body>
@@ -226,15 +262,91 @@ dl.rows dd.lit{color:var(--accent)}
     </div>
   </section>
 
-  <section class="panel code" aria-label="The same maths in C++">
-    <h2>The same maths in C++</h2>
-    <p>Every number above comes from these five lines. The last one is the difference between the two verdicts.</p>
-<pre>PunchElapsed += DeltaTime;
-float Alpha    = PunchElapsed / PunchDuration;
-float Offset   = CurvePunch-&gt;GetFloatValue(Alpha) * PunchDistance;
-FVector Desired  = PunchStartLocation + TargetBatDirection * Offset;
-FVector Velocity = (Desired - Component-&gt;GetComponentLocation()) / DeltaTime;</pre>
-    <p class="note">Feeding <code>Desired</code> to <code>SetRelativeLocation</code> places the bat at the dots and nowhere between them. Feeding <code>Velocity</code> to <code>SetPhysicsLinearVelocity</code> makes the solver travel the line joining them, which is what the second verdict is testing.</p>
+  <section class="panel code" aria-label="Five lines, three kinds of number">
+    <h2>Five lines, three kinds of number</h2>
+    <p>The real arithmetic for the frame you have selected, with the punch running along +X from a start of <code>(120, -40)</code>. Each row is fed by the row above it: the <b class="carry">highlighted</b> number in every sum is the answer from the previous line. Follow one number down the list and you have followed the whole punch.</p>
+
+    <ol class="pipe">
+      <li>
+        <span class="name">Elapsed</span>
+        <code class="expr" id="xElapsed"></code>
+        <span class="val" id="pElapsed"></span>
+        <span class="kind k-num">number · s</span>
+      </li>
+      <li>
+        <span class="name">Alpha</span>
+        <code class="expr" id="xAlpha"></code>
+        <span class="val" id="pAlpha"></span>
+        <span class="kind k-num">number · 0 to 1</span>
+      </li>
+      <li>
+        <span class="name">Curve</span>
+        <code class="expr" id="xCurve"></code>
+        <span class="val" id="pCurve"></span>
+        <span class="kind k-num">number · 0 to 1</span>
+      </li>
+      <li>
+        <span class="name">Offset</span>
+        <code class="expr" id="xOffset"></code>
+        <span class="val" id="pOffset"></span>
+        <span class="kind k-num">number · cm</span>
+      </li>
+      <li>
+        <span class="name">Step</span>
+        <code class="expr" id="xStep"></code>
+        <span class="val" id="pStep"></span>
+        <span class="kind k-move">move · cm</span>
+      </li>
+      <li>
+        <span class="name">Desired</span>
+        <code class="expr" id="xDesired"></code>
+        <span class="val" id="pDesired"></span>
+        <span class="kind k-place">place</span>
+      </li>
+      <li>
+        <span class="name">Gap</span>
+        <code class="expr" id="xGap"></code>
+        <span class="val" id="pGap"></span>
+        <span class="kind k-move">move · cm</span>
+      </li>
+      <li>
+        <span class="name">Velocity</span>
+        <code class="expr" id="xVel"></code>
+        <span class="val" id="pVel"></span>
+        <span class="kind k-move">move · cm/s</span>
+      </li>
+    </ol>
+
+    <p class="note">Watch where the kind changes. It stays a plain number for four rows, becomes a <b>move</b> the moment the direction is multiplied in, becomes a <b>place</b> when that move is added to the start, and turns back into a <b>move</b> the moment one place is subtracted from another. Nothing else in the punch is a vector.</p>
+
+    <div class="kinds">
+      <div>
+        <h3>A place</h3>
+        <p>Where something is, counted from the world origin. On its own its length means nothing — <code>(120, -40)</code> is not "126 long", it is over there.</p>
+      </div>
+      <div>
+        <h3>A move</h3>
+        <p>How far and which way, with no starting point of its own. A place minus a place is always a move.</p>
+      </div>
+      <div>
+        <h3>A number</h3>
+        <p>No direction at all. Seconds, a fraction, a distance. It can stretch a move, never point one.</p>
+      </div>
+    </div>
+
+    <div class="rules">
+      <h3>What the maths lets you do</h3>
+      <ul>
+        <li><code>place - place</code> gives a <b>move</b> — that is how <code>Delta</code> is built</li>
+        <li><code>move / its length</code> gives a <b>direction</b>, a move of length 1</li>
+        <li><code>direction * number</code> gives a <b>move</b> of exactly that many centimetres</li>
+        <li><code>place + move</code> gives a <b>place</b> — that is the <code>Desired</code> line</li>
+        <li><code>move / seconds</code> gives a <b>velocity</b> — the last line, and the only one physics can use</li>
+        <li class="no"><code>place + place</code> is meaningless, and so is <code>place * number</code></li>
+      </ul>
+    </div>
+
+    <p class="note">The final divide is the whole difference between the two verdicts above. <code>Desired</code> is a place, and handing a place to <code>SetRelativeLocation</code> says <em>be there now</em>. Dividing by <code>DeltaTime</code> turns the same information into a speed, and handing that to <code>SetPhysicsLinearVelocity</code> says <em>travel there over this frame</em> — which is what gives the solver a line to test for contact.</p>
   </section>
 </div>
 
@@ -372,6 +484,42 @@ function render(){
   txt("oCurve",f(curveVal(cur.alpha),3));
   txt("oOffset",f(cur.off,2)+" cm");
   txt("oVel",f(vel,0)+" cm/s");
+
+  // The pipeline panel. Each row shows the real sum with the previous row's
+  // answer substituted in, so the chain is readable rather than asserted.
+  var SX=120, SY=-40;
+  function v2(x,y){ return "("+f(x,2)+", "+f(y,2)+")"; }
+  function carry(v){ return '<b class="carry">'+v+"</b>"; }
+  function expr(id,html){ document.getElementById(id).innerHTML=html; }
+
+  var prevT   = state.frame>0 ? s.list[state.frame-1].t : 0;
+  var curveV  = curveVal(cur.alpha);
+  var prevPos = v2(SX+prev,SY);
+  var gapX    = cur.off-prev;
+
+  expr("xElapsed", carry(f(prevT,3))+" + "+f(s.dt,3));
+  txt("pElapsed", f(cur.t,3)+" s");
+
+  expr("xAlpha", carry(f(cur.t,3))+" / "+f(state.dur,3));
+  txt("pAlpha", f(cur.alpha,3));
+
+  expr("xCurve", "Curve( "+carry(f(cur.alpha,3))+" )");
+  txt("pCurve", f(curveV,3));
+
+  expr("xOffset", carry(f(curveV,3))+" &times; "+f(state.dist,0));
+  txt("pOffset", f(cur.off,2)+" cm");
+
+  expr("xStep", v2(1,0)+" &times; "+carry(f(cur.off,2)));
+  txt("pStep", v2(cur.off,0));
+
+  expr("xDesired", v2(SX,SY)+" + "+carry(v2(cur.off,0)));
+  txt("pDesired", v2(SX+cur.off,SY));
+
+  expr("xGap", carry(v2(SX+cur.off,SY))+" &minus; "+prevPos);
+  txt("pGap", v2(gapX,0));
+
+  expr("xVel", carry(v2(gapX,0))+" / "+f(s.dt,3));
+  txt("pVel", v2(vel,0)+" cm/s");
 
   // budget
   var big=0;
