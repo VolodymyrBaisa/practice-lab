@@ -1,5 +1,20 @@
 [
   {
+    "id": "punch-bench",
+    "menu": "Punch timing",
+    "title": "Punch Bench",
+    "summary": "Step a curve-driven punch one simulated frame at a time and compare what placing the bat and sweeping the bat each hand to the physics solver.",
+    "why": "A punch built on SetRelativeLocation animates perfectly and moves nothing. Seeing the bat land squarely inside the puck while the verdict still reads no push is what separates two things that look identical on screen: where a body is, and how fast it is going.",
+    "topics": [
+      "physics",
+      "timing",
+      "curves",
+      "unreal"
+    ],
+    "added": "2026-09-06",
+    "href": "practices/punch-bench/index.html"
+  },
+  {
     "id": "normalize-bench",
     "menu": "Normalize",
     "title": "Normalize Bench",
