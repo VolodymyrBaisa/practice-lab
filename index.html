@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>(function(){var t="dark";try{var s=localStorage.getItem("lab-theme");if(s==="light"||s==="system")t=s;}catch(e){}if(t!=="system")document.documentElement.setAttribute("data-theme",t);})();</script>
 <title>Practice Lab</title>
 <meta name="description" content="Small hands-on pages for game engine maths and mechanics — type the answer, see it drawn, get it checked.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,7 +14,10 @@
 <body>
 <div class="shell">
   <aside class="side">
-    <p class="eyebrow">Practice lab</p>
+    <div class="sidehead">
+      <p class="eyebrow">Practice lab</p>
+      <button type="button" class="theme" id="themeBtn">Theme: dark</button>
+    </div>
     <h2>Practices</h2>
     <nav aria-label="All practices"><ul id="nav"></ul></nav>
     <h2 class="second" data-ref-head hidden>Reference</h2>
@@ -44,5 +48,21 @@
 
 <script src="assets/manifest.js"></script>
 <script src="assets/site.js"></script>
+<script>
+(function(){
+  var order=["dark","light","system"];
+  var btn=document.getElementById("themeBtn");
+  if(!btn) return;
+  function read(){ try{ return localStorage.getItem("lab-theme")||"dark"; }catch(e){ return "dark"; } }
+  function apply(v){
+    if(v==="system") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme",v);
+    btn.textContent="Theme: "+v;
+    try{ localStorage.setItem("lab-theme",v); }catch(e){}
+  }
+  apply(read());
+  btn.addEventListener("click",function(){ apply(order[(order.indexOf(read())+1)%order.length]); });
+})();
+</script>
 </body>
 </html>

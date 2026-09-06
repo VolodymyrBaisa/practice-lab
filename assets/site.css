@@ -1,4 +1,5 @@
 :root{
+  color-scheme:light;
   --ground:#F1F4F1; --surface:#FFFFFF; --sunk:#E8ECE8;
   --ink:#141E1B; --ink-2:#4E5B57; --ink-3:#7E8A85;
   --line:#D4DBD6; --line-2:#B6C0BA;
@@ -6,6 +7,7 @@
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
+    color-scheme:dark;
     --ground:#0F1617; --surface:#18211F; --sunk:#131B1A;
     --ink:#E5ECE8; --ink-2:#A2AFAA; --ink-3:#7A8681;
     --line:#283432; --line-2:#3A4744;
@@ -13,6 +15,7 @@
   }
 }
 :root[data-theme="dark"]{
+  color-scheme:dark;
   --ground:#0F1617; --surface:#18211F; --sunk:#131B1A;
   --ink:#E5ECE8; --ink-2:#A2AFAA; --ink-3:#7A8681;
   --line:#283432; --line-2:#3A4744;
@@ -21,7 +24,6 @@
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-html{color-scheme:light dark}
 body{
   margin:0;background:var(--ground);color:var(--ink);
   font-family:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
@@ -34,6 +36,14 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
 .shell{max-width:1180px;margin:0 auto;padding:36px 24px 80px;display:grid;grid-template-columns:224px minmax(0,1fr);gap:40px;align-items:start}
 @media (max-width:860px){.shell{grid-template-columns:1fr;gap:28px;padding-top:28px}}
 
+.sidehead{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.theme{
+  font:inherit;font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;
+  text-transform:uppercase;letter-spacing:.1em;font-size:11px;
+  color:var(--ink-3);background:none;border:1px solid var(--line);
+  padding:5px 11px;border-radius:99px;cursor:pointer;white-space:nowrap;
+}
+.theme:hover{color:var(--ink);border-color:var(--line-2)}
 .eyebrow{
   font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;
   font-weight:500;text-transform:uppercase;letter-spacing:.12em;

@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>(function(){var t="dark";try{var s=localStorage.getItem("lab-theme");if(s==="light"||s==="system")t=s;}catch(e){}if(t!=="system")document.documentElement.setAttribute("data-theme",t);})();</script>
 <title>Punch Bench</title>
 <meta name="description" content="Step through a curve-driven punch one simulated frame at a time and see the gap a teleport jumps over.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -10,6 +11,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500&family=IBM+Plex+Sans:wght@400;500&display=swap">
 <style>
 :root{
+  color-scheme:light;
   --ground:#F1F4F1; --surface:#FFFFFF; --sunk:#E8ECE8;
   --ink:#141E1B; --ink-2:#4E5B57; --ink-3:#7E8A85;
   --line:#D4DBD6; --line-2:#B6C0BA;
@@ -20,6 +22,7 @@
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
+    color-scheme:dark;
     --ground:#0F1617; --surface:#18211F; --sunk:#131B1A;
     --ink:#E5ECE8; --ink-2:#A2AFAA; --ink-3:#7A8681;
     --line:#283432; --line-2:#3A4744;
@@ -30,6 +33,7 @@
   }
 }
 :root[data-theme="dark"]{
+  color-scheme:dark;
   --ground:#0F1617; --surface:#18211F; --sunk:#131B1A;
   --ink:#E5ECE8; --ink-2:#A2AFAA; --ink-3:#7A8681;
   --line:#283432; --line-2:#3A4744;
@@ -39,15 +43,21 @@
   --dot:#93A19C;
 }
 *{box-sizing:border-box}
-html{color-scheme:light dark}
 body{
   margin:0;background:var(--ground);color:var(--ink);
   font-family:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
   font-size:15px;line-height:1.6;
 }
-.crumb{max-width:1140px;margin:0 auto;padding:20px 22px 0;font-size:13px}
+.crumb{max-width:1140px;margin:0 auto;padding:20px 22px 0;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:16px}
 .crumb a{color:var(--ink-3);text-decoration:none;font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:11px}
 .crumb a:hover{color:var(--accent)}
+.theme{
+  font:inherit;font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;
+  text-transform:uppercase;letter-spacing:.1em;font-size:11px;
+  color:var(--ink-3);background:none;border:1px solid var(--line);
+  padding:5px 11px;border-radius:99px;cursor:pointer;white-space:nowrap;
+}
+.theme:hover{color:var(--ink);border-color:var(--line-2)}
 a:focus-visible,button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
 .bench{max-width:1140px;margin:0 auto;padding:10px 22px 72px}
 .eyebrow{
@@ -104,7 +114,7 @@ dl.rows dd.lit{color:var(--accent)}
 </style>
 </head>
 <body>
-<p class="crumb"><a href="../../index.html">&larr; Practice lab</a></p>
+<p class="crumb"><a href="../../index.html">&larr; Practice lab</a><button type="button" class="theme" id="themeBtn">Theme: dark</button></p>
 
 <div class="bench">
   <p class="eyebrow">Physics · timing</p>
@@ -497,6 +507,22 @@ playBtn.addEventListener("click",function(){
 });
 
 render();
+})();
+</script>
+<script>
+(function(){
+  var order=["dark","light","system"];
+  var btn=document.getElementById("themeBtn");
+  if(!btn) return;
+  function read(){ try{ return localStorage.getItem("lab-theme")||"dark"; }catch(e){ return "dark"; } }
+  function apply(v){
+    if(v==="system") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme",v);
+    btn.textContent="Theme: "+v;
+    try{ localStorage.setItem("lab-theme",v); }catch(e){}
+  }
+  apply(read());
+  btn.addEventListener("click",function(){ apply(order[(order.indexOf(read())+1)%order.length]); });
 })();
 </script>
 </body>

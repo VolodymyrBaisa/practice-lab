@@ -83,8 +83,15 @@ because the manifest is a plain script rather than a `fetch`.
 
 - **Standalone.** One HTML file, its own styles and script inside it. Fonts from Google
   Fonts are fine; nothing else external.
-- **Light and dark.** Define the full palette on `:root`, override it under
-  `prefers-color-scheme: dark`, and set an explicit `background` on `body`.
+- **Light and dark.** Define the full palette on `:root` with `color-scheme:light`, then
+  override the tokens twice: under `@media (prefers-color-scheme: dark)` guarded as
+  `:root:not([data-theme="light"])`, and again under `:root[data-theme="dark"]`. Both dark
+  blocks set `color-scheme:dark`. Set an explicit `background` on `body`.
+- **Carry the theme toggle.** The site is dark by default and the choice is stored in
+  `localStorage` under `lab-theme`, cycling dark → light → system. Each page carries its own
+  copy of two things, deliberately, so the page still stands alone: a one-line script in
+  `<head>` that stamps `data-theme` before first paint, and a small script before `</body>`
+  that wires the `#themeBtn` button in the crumb bar. Copy both from any existing page.
 - **Working at rest.** The page opens in a usable state with example values already in
   place, never an empty shell.
 - **Check against more than one case.** If the page grades an answer, grade it at several
