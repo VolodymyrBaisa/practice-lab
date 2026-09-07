@@ -189,8 +189,8 @@ button.go{background:var(--accent-soft);border-color:var(--accent);color:var(--a
       <p class="phase" id="phase"></p>
 
       <div class="curvebox">
-        <p class="curvecap">CurvePunch &mdash; alpha across, curve value up. The squares are its three keys.</p>
-        <svg class="fig" id="curveFig" viewBox="0 0 520 152" role="img" aria-label="The punch curve rising from zero to a peak at alpha 0.35 and falling back to zero, with a marker at the current alpha">
+        <p class="curvecap">CurvePunch &mdash; alpha across, curve value up. <b>Drag the middle key</b> to reshape the punch. The outer two are pinned at zero, the way the asset is.</p>
+        <svg class="fig" id="curveFig" viewBox="0 0 520 152" role="img" aria-label="The punch curve rising from zero to a draggable peak key and falling back to zero, with a marker at the current alpha">
           <line x1="34" y1="118" x2="500" y2="118" stroke="var(--grid-2)" stroke-width="1"></line>
           <line x1="34" y1="18" x2="34" y2="118" stroke="var(--grid-2)" stroke-width="1"></line>
           <line x1="34" y1="18" x2="500" y2="18" stroke="var(--grid)" stroke-width="1" stroke-dasharray="3 4"></line>
@@ -198,7 +198,7 @@ button.go{background:var(--accent-soft);border-color:var(--accent);color:var(--a
           <line id="curveMark" y1="18" y2="118" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="3 3"></line>
           <circle id="curveDot" r="5" fill="var(--ink)"></circle>
           <rect x="30" y="114" width="8" height="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5"></rect>
-          <rect x="192" y="14" width="8" height="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5"></rect>
+          <rect id="peakKey" class="grab" width="11" height="11" rx="2" fill="var(--surface)" stroke="var(--accent)" stroke-width="2" tabindex="0" role="slider" aria-label="Curve peak key. Arrow keys move it."></rect>
           <rect x="496" y="114" width="8" height="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5"></rect>
           <text x="28" y="22" fill="var(--ink-3)" font-size="11" font-family="IBM Plex Mono, monospace" text-anchor="end">1</text>
           <text x="28" y="122" fill="var(--ink-3)" font-size="11" font-family="IBM Plex Mono, monospace" text-anchor="end">0</text>
@@ -336,7 +336,7 @@ var START={x:60,y:60};              // where the punch begins, in centimetres
 var DIR_LEN=34;                     // length of the drawn direction arrow, cm
 var VEL_SCALE=0.022, VEL_MAX=44;    // velocity is drawn scaled down, then clamped
 
-var state={ dur:0.10, dist:30, angle:0, frame:0, playing:false };
+var state={ dur:0.10, dist:30, angle:0, frame:0, playing:false, peakT:0.35, peakV:1 };
 
 function sx(x){ return X0 + x*PX; }
 function sy(y){ return Y1 - y*PX; }
@@ -353,12 +353,12 @@ function txt(id,s){ document.getElementById(id).textContent=s; }
 function expr(id,html){ document.getElementById(id).innerHTML=html; }
 function carry(v){ return '<b class="carry">'+v+"</b>"; }
 
-// Rises to a peak at 0.35 and falls back to zero: strike, then return.
+// Rises to the peak key and falls back to zero: strike, then return.
 function smooth(u){ return u*u*(3-2*u); }
 function curveVal(t){
   if(t<=0||t>=1) return 0;
-  if(t<0.35) return smooth(t/0.35);
-  return 1-smooth((t-0.35)/0.65);
+  if(t<state.peakT) return state.peakV*smooth(t/state.peakT);
+  return state.peakV*(1-smooth((t-state.peakT)/(1-state.peakT)));
 }
 function samples(){
   var n=Math.max(2,Math.round(state.dur*60)), dt=state.dur/n, out=[];
@@ -384,16 +384,47 @@ var batDot=document.getElementById("batDot"), batLabel=document.getElementById("
 var frameInput=document.getElementById("frame"), playBtn=document.getElementById("play");
 var curvePath=document.getElementById("curvePath"), curveMark=document.getElementById("curveMark"), curveDot=document.getElementById("curveDot");
 
+var peakKey=document.getElementById("peakKey"), curveFig=document.getElementById("curveFig");
+
 function ccx(t){ return 34 + t*466; }
 function ccy(v){ return 118 - v*100; }
-(function drawCurve(){
+function drawCurve(){
   var d="";
   for(var i=0;i<=140;i++){
     var t=i/140;
     d+=(i?"L":"M")+f(ccx(t),1)+" "+f(ccy(curveVal(t)),1);
   }
   curvePath.setAttribute("d",d);
-})();
+  set(peakKey,{x:ccx(state.peakT)-5.5,y:ccy(state.peakV)-5.5});
+  peakKey.setAttribute("aria-valuetext","alpha "+f(state.peakT,2)+", value "+f(state.peakV,2));
+}
+
+// dragging the peak key
+var dragKey=false;
+peakKey.addEventListener("pointerdown",function(evt){
+  dragKey=true;
+  if(curveFig.setPointerCapture) curveFig.setPointerCapture(evt.pointerId);
+  evt.preventDefault();
+});
+curveFig.addEventListener("pointermove",function(evt){
+  if(!dragKey) return;
+  var r=curveFig.getBoundingClientRect();
+  var px=(evt.clientX-r.left)*(520/r.width), py=(evt.clientY-r.top)*(152/r.height);
+  state.peakT=Math.min(0.9,Math.max(0.1,(px-34)/466));
+  state.peakV=Math.min(1,Math.max(0.2,(118-py)/100));
+  render();
+});
+curveFig.addEventListener("pointerup",function(){ dragKey=false; });
+curveFig.addEventListener("pointercancel",function(){ dragKey=false; });
+peakKey.addEventListener("keydown",function(evt){
+  var st=evt.shiftKey?0.1:0.02, used=true;
+  if(evt.key==="ArrowRight") state.peakT=Math.min(0.9,state.peakT+st);
+  else if(evt.key==="ArrowLeft") state.peakT=Math.max(0.1,state.peakT-st);
+  else if(evt.key==="ArrowUp") state.peakV=Math.min(1,state.peakV+st);
+  else if(evt.key==="ArrowDown") state.peakV=Math.max(0.2,state.peakV-st);
+  else used=false;
+  if(used){ evt.preventDefault(); render(); }
+});
 
 function render(){
   var s=samples();
@@ -454,6 +485,7 @@ function render(){
   var prevT=state.frame>0 ? s.list[state.frame-1].t : 0;
   var cv=curveVal(cur.alpha);
 
+  drawCurve();
   set(curveMark,{x1:ccx(cur.alpha),x2:ccx(cur.alpha)});
   set(curveDot,{cx:ccx(cur.alpha),cy:ccy(cv)});
 
