@@ -684,6 +684,9 @@ function stop(){ if(timer) clearInterval(timer); timer=null; state.playing=false
 playBtn.addEventListener("click",function(){
   if(state.playing){ stop(); return; }
   state.playing=true; playBtn.textContent="Stop";
+  // Simulating shows the finished picture. Studying one line at a time is what
+  // the chain rows are for; watching an empty grid move is no use to anyone.
+  state.stage=8;
   state.frame=0; render();
   timer=setInterval(function(){
     if(state.frame>=samples().n){ stop(); return; }
