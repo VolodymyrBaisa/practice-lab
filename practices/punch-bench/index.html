@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>(function(){var t="dark";try{var s=localStorage.getItem("lab-theme");if(s==="light"||s==="system")t=s;}catch(e){}if(t!=="system")document.documentElement.setAttribute("data-theme",t);})();</script>
 <title>Punch Bench</title>
-<meta name="description" content="Step through a curve-driven punch one simulated frame at a time and see the gap a teleport jumps over.">
+<meta name="description" content="Watch the vectors of a curve-driven punch as it strikes and returns, and follow each number into the next.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500&family=IBM+Plex+Sans:wght@400;500&display=swap">
@@ -16,7 +16,8 @@
   --ink:#141E1B; --ink-2:#4E5B57; --ink-3:#7E8A85;
   --line:#D4DBD6; --line-2:#B6C0BA;
   --accent:#0B7A5E; --accent-soft:#DAEFE7; --accent-ink:#075243;
-  --bad:#A8422A; --bad-soft:#F6E5DF; --bad-ink:#7A2E1B;
+  --vel:#8A6A12; --vel-soft:#F5EBD3;
+  --place:#A8422A; --place-soft:#F6E5DF; --place-ink:#7A2E1B;
   --grid:#E3E8E3; --grid-2:#CFD8D1;
   --dot:#5F6D68;
 }
@@ -27,7 +28,8 @@
     --ink:#E5ECE8; --ink-2:#A2AFAA; --ink-3:#7A8681;
     --line:#283432; --line-2:#3A4744;
     --accent:#45D3A5; --accent-soft:#10312A; --accent-ink:#8DE8C6;
-    --bad:#E58060; --bad-soft:#33201A; --bad-ink:#F0A88F;
+    --vel:#D9AE55; --vel-soft:#2E2716;
+    --place:#E58060; --place-soft:#33201A; --place-ink:#F0A88F;
     --grid:#1D2726; --grid-2:#2B3937;
     --dot:#93A19C;
   }
@@ -38,7 +40,8 @@
   --ink:#E5ECE8; --ink-2:#A2AFAA; --ink-3:#7A8681;
   --line:#283432; --line-2:#3A4744;
   --accent:#45D3A5; --accent-soft:#10312A; --accent-ink:#8DE8C6;
-  --bad:#E58060; --bad-soft:#33201A; --bad-ink:#F0A88F;
+  --vel:#D9AE55; --vel-soft:#2E2716;
+  --place:#E58060; --place-soft:#33201A; --place-ink:#F0A88F;
   --grid:#1D2726; --grid-2:#2B3937;
   --dot:#93A19C;
 }
@@ -66,287 +69,175 @@ a:focus-visible,button:focus-visible,input:focus-visible,[tabindex]:focus-visibl
   font-size:12px;color:var(--ink-3);margin:0 0 8px;
 }
 h1{font-size:30px;font-weight:500;letter-spacing:-.015em;margin:0 0 10px;text-wrap:balance}
-.lede{margin:0 0 28px;color:var(--ink-2);max-width:64ch}
-.top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,340px);gap:22px;align-items:start}
-@media (max-width:900px){.top{grid-template-columns:1fr}}
+.lede{margin:0 0 28px;color:var(--ink-2);max-width:62ch}
+.lab{display:grid;grid-template-columns:minmax(0,560px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:980px){.lab{grid-template-columns:1fr}}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
-.panel h2{font-size:15px;font-weight:500;margin:0 0 4px}
-.panel .sub{margin:0 0 14px;color:var(--ink-2);font-size:13px}
+.view{position:sticky;top:18px}
+@media (max-width:980px){.view{position:static}}
 svg.fig{display:block;width:100%;height:auto;touch-action:none;user-select:none}
 .grab{cursor:grab}
 .grab:active{cursor:grabbing}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-3)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:16px;height:3px;border-radius:2px;display:inline-block}
+.legend i.d{width:10px;height:10px;border-radius:50%}
 .ctl{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
 .ctl label{font-family:"IBM Plex Sans Condensed",sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:11px;color:var(--ink-3);white-space:nowrap}
-.ctl output{font-family:"IBM Plex Mono",monospace;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink);min-width:56px}
+.ctl output{font-family:"IBM Plex Mono",monospace;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink);min-width:52px}
 input[type=range]{flex:1;min-width:110px;accent-color:var(--accent)}
 button{
-  font:inherit;font-size:13px;padding:6px 12px;border-radius:7px;
+  font:inherit;font-size:13px;padding:7px 15px;border-radius:7px;
   border:1px solid var(--line-2);background:var(--surface);color:var(--ink);cursor:pointer;
 }
 button:hover{border-color:var(--ink-3)}
-.seg{display:flex;border:1px solid var(--line-2);border-radius:7px;overflow:hidden}
-.seg button{border:0;border-radius:0;font-family:"IBM Plex Mono",monospace}
-.seg button[aria-pressed=true]{background:var(--accent-soft);color:var(--accent-ink)}
-dl.rows{display:grid;grid-template-columns:auto 1fr;gap:9px 16px;margin:0;align-items:baseline}
-dl.rows dt{font-family:"IBM Plex Sans Condensed",sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:11px;color:var(--ink-3);white-space:nowrap}
-dl.rows dd{margin:0;font-family:"IBM Plex Mono",monospace;font-size:14px;font-variant-numeric:tabular-nums;color:var(--ink)}
-dl.rows dd.lit{color:var(--accent)}
-.stack{display:flex;flex-direction:column;gap:14px}
-.wide{margin-top:22px}
-.verdicts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
-@media (max-width:620px){.verdicts{grid-template-columns:1fr}}
-.v{border-radius:10px;padding:13px 14px;border:1px solid var(--line)}
-.v h3{margin:0 0 3px;font-size:13px;font-weight:500;font-family:"IBM Plex Mono",monospace}
-.v p{margin:0;font-size:13px}
-.v.hit{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
-.v.miss{background:var(--bad-soft);border-color:var(--bad);color:var(--bad-ink)}
-.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-3)}
-.legend span{display:flex;align-items:center;gap:6px}
-.legend i{width:11px;height:11px;border-radius:50%;display:inline-block}
-.legend i.band{border-radius:2px;width:16px;height:10px}
-.code{margin-top:22px}
-.code pre{
-  margin:0;padding:14px 16px;border-radius:10px;background:var(--sunk);
-  overflow-x:auto;font-family:"IBM Plex Mono",monospace;font-size:13px;line-height:1.65;color:var(--ink);
+button.go{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink);font-weight:500}
+.phase{
+  margin:12px 0 0;font-size:13px;padding:10px 13px;border-radius:8px;
+  background:var(--sunk);color:var(--ink-2);
 }
-.code p{margin:0 0 10px;color:var(--ink-2);font-size:14px}
-.note{margin:14px 0 0;font-size:13px;color:var(--ink-2)}
+.phase b{color:var(--ink);font-weight:500}
+.panel h2{font-size:16px;font-weight:500;margin:0 0 4px}
+.panel .sub{margin:0 0 14px;color:var(--ink-2);font-size:13px}
 .pipe{list-style:none;margin:0;padding:0}
 .pipe li{
-  display:grid;grid-template-columns:86px minmax(0,1fr) auto auto;gap:8px 16px;align-items:center;
-  padding:11px 2px;border-bottom:1px solid var(--line);
+  display:grid;grid-template-columns:74px minmax(0,1fr) auto;gap:6px 14px;align-items:center;
+  padding:10px 2px;border-bottom:1px solid var(--line);
 }
 .pipe li:last-child{border-bottom:0}
 .pipe .name{
   font-family:"IBM Plex Sans Condensed",sans-serif;text-transform:uppercase;
   letter-spacing:.1em;font-size:11px;color:var(--ink-3);
 }
-.pipe .expr{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink-2);overflow-x:auto;display:block;white-space:nowrap}
+.pipe .expr{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink-2);overflow-x:auto;display:block;white-space:nowrap}
 .pipe .val{font-family:"IBM Plex Mono",monospace;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink);text-align:right;white-space:nowrap}
-.carry{
-  font-weight:500;color:var(--accent);
-  border-bottom:1px solid var(--accent);padding-bottom:1px;
+.pipe li[data-kind=move] .val{color:var(--accent)}
+.pipe li[data-kind=place] .val{color:var(--place)}
+.pipe li[data-kind=vel] .val{color:var(--vel)}
+.carry{font-weight:500;color:var(--accent);border-bottom:1px solid var(--accent);padding-bottom:1px}
+@media (max-width:560px){
+  .pipe li{grid-template-columns:1fr}
+  .pipe .val{text-align:left}
 }
-.kind{font-family:"IBM Plex Sans Condensed",sans-serif;text-transform:uppercase;letter-spacing:.09em;font-size:10px;padding:3px 9px;border-radius:99px;white-space:nowrap;text-align:center}
-.k-num{background:var(--sunk);color:var(--ink-3)}
-.k-place{background:var(--bad-soft);color:var(--bad-ink)}
-.k-move{background:var(--accent-soft);color:var(--accent-ink)}
-@media (max-width:760px){
-  .pipe li{grid-template-columns:1fr auto;gap:5px 12px}
-  .pipe .name{grid-column:1}
-  .pipe .kind{grid-column:2;justify-self:end}
-  .pipe .expr,.pipe .val{grid-column:1/-1;text-align:left}
+.kinds{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:16px}
+.kinds div{padding:12px 13px;border-radius:9px}
+.kinds .k-move{background:var(--accent-soft)}
+.kinds .k-place{background:var(--place-soft)}
+.kinds .k-vel{background:var(--vel-soft)}
+.kinds h3{margin:0 0 3px;font-size:13px;font-weight:500}
+.kinds .k-move h3{color:var(--accent-ink)}
+.kinds .k-place h3{color:var(--place-ink)}
+.kinds .k-vel h3{color:var(--vel)}
+.kinds p{margin:0;font-size:12.5px;color:var(--ink-2)}
+.wide{margin-top:22px}
+.wide pre{
+  margin:12px 0 0;padding:14px 16px;border-radius:10px;background:var(--sunk);
+  overflow-x:auto;font-family:"IBM Plex Mono",monospace;font-size:13px;line-height:1.7;color:var(--ink);
 }
-.kinds{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:20px}
-.kinds div{padding:13px 14px;border-radius:9px;background:var(--sunk)}
-.kinds h3{margin:0 0 4px;font-size:13px;font-weight:500}
-.kinds p{margin:0;font-size:13px;color:var(--ink-2)}
-.rules{margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
-.rules h3{margin:0 0 10px;font-size:14px;font-weight:500}
-.rules ul{margin:0;padding:0;list-style:none;display:grid;gap:7px}
-.rules li{font-size:13px;color:var(--ink-2)}
-.rules code{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink)}
-.rules li.no code{color:var(--bad)}
+.wide p{margin:0 0 10px;color:var(--ink-2);font-size:14px;max-width:74ch}
+.wide p:last-of-type{margin-bottom:0}
+.wide code{font-family:"IBM Plex Mono",monospace;font-size:13px}
 </style>
 </head>
 <body>
 <p class="crumb"><a href="../../index.html">&larr; Practice lab</a><button type="button" class="theme" id="themeBtn">Theme: dark</button></p>
 
 <div class="bench">
-  <p class="eyebrow">Physics · timing</p>
+  <p class="eyebrow">Vectors &middot; physics</p>
   <h1>Punch Bench</h1>
-  <p class="lede">A punch is a curve sampled once per frame. Placing the bat at each sample looks perfect on screen and moves nothing, because a placed body has no speed to hand over. Step through the frames below and compare what each of the two ways of moving it actually gives the solver.</p>
+  <p class="lede">Press simulate and watch two arrows. The teal one is how far the bat has moved from where it started. The amber one is how fast it is going right now — and it flips around when the punch turns into a return.</p>
 
-  <div class="top">
-    <section class="panel" aria-label="The punch curve">
-      <h2>The curve</h2>
-      <p class="sub">Drag the peak. Left of it is the strike, right of it is the return.</p>
-      <svg class="fig" id="curveFig" viewBox="0 0 520 292" role="img" aria-label="A curve rising from zero to a draggable peak and falling back to zero across normalized time">
-        <g id="curveGrid"></g>
-        <line x1="48" y1="248" x2="496" y2="248" stroke="var(--grid-2)" stroke-width="1"></line>
-        <line x1="48" y1="32" x2="48" y2="248" stroke="var(--grid-2)" stroke-width="1"></line>
-        <path id="curvePath" fill="none" stroke="var(--accent)" stroke-width="2"></path>
-        <line id="alphaLine" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="3 4"></line>
-        <circle id="alphaDot" r="5" fill="var(--ink)"></circle>
-        <circle id="peakHandle" class="grab" r="9" fill="var(--surface)" stroke="var(--accent)" stroke-width="2.5" tabindex="0" role="slider" aria-label="Curve peak. Arrow keys move it."></circle>
-        <text x="272" y="278" fill="var(--ink-3)" font-size="12" font-family="IBM Plex Mono, monospace" text-anchor="middle">alpha = elapsed / duration</text>
-        <text x="40" y="36" fill="var(--ink-3)" font-size="12" font-family="IBM Plex Mono, monospace" text-anchor="end">1</text>
-        <text x="40" y="252" fill="var(--ink-3)" font-size="12" font-family="IBM Plex Mono, monospace" text-anchor="end">0</text>
+  <div class="lab">
+    <section class="panel view" aria-label="The punch as vectors">
+      <svg class="fig" id="fig" viewBox="0 0 560 552" role="img" aria-label="A grid showing the start position, the punch direction, the offset vector to the bat, and the velocity arrow">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+          </marker>
+        </defs>
+        <g id="grid"></g>
+        <g id="trail"></g>
+        <line id="dirLine" stroke="var(--line-2)" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#ah)"></line>
+        <circle id="dirHandle" class="grab" r="8" fill="var(--surface)" stroke="var(--line-2)" stroke-width="2" tabindex="0" role="slider" aria-label="Punch direction. Arrow keys turn it."></circle>
+        <text id="dirLabel" font-size="12" font-family="IBM Plex Mono, monospace" fill="var(--ink-3)"></text>
+        <line id="stepLine" stroke="var(--accent)" stroke-width="2.5" marker-end="url(#ah)"></line>
+        <line id="velLine" stroke="var(--vel)" stroke-width="2.5" marker-end="url(#ah)"></line>
+        <text id="velLabel" font-size="12" font-family="IBM Plex Mono, monospace" fill="var(--vel)"></text>
+        <circle id="startDot" r="7" fill="none" stroke="var(--place)" stroke-width="2"></circle>
+        <text id="startLabel" font-size="12" font-family="IBM Plex Mono, monospace" fill="var(--place)"></text>
+        <circle id="batDot" r="9" fill="var(--place)"></circle>
+        <text id="batLabel" font-size="12" font-family="IBM Plex Mono, monospace" fill="var(--place)"></text>
       </svg>
+
+      <div class="legend">
+        <span><i class="d" style="background:none;border:2px solid var(--place)"></i>start &mdash; a place</span>
+        <span><i class="d" style="background:var(--place)"></i>bat &mdash; a place</span>
+        <span><i style="background:var(--accent)"></i>offset &mdash; a move</span>
+        <span><i style="background:var(--vel)"></i>velocity &mdash; a move per second</span>
+      </div>
+
+      <p class="phase" id="phase"></p>
+
+      <div class="ctl">
+        <label for="frame">Frame</label>
+        <input type="range" id="frame" min="0" max="6" step="1" value="0">
+        <output id="frameOut"></output>
+        <button type="button" class="go" id="play">Simulate</button>
+      </div>
       <div class="ctl">
         <label for="dur">Duration</label>
-        <input type="range" id="dur" min="0.04" max="0.4" step="0.01" value="0.1">
+        <input type="range" id="dur" min="0.05" max="0.4" step="0.01" value="0.1">
         <output id="durOut"></output>
       </div>
       <div class="ctl">
         <label for="dist">Distance</label>
-        <input type="range" id="dist" min="10" max="80" step="1" value="30">
+        <input type="range" id="dist" min="10" max="55" step="1" value="30">
         <output id="distOut"></output>
-      </div>
-      <div class="ctl">
-        <label>Frame rate</label>
-        <div class="seg" role="group" aria-label="Simulated frame rate">
-          <button type="button" data-fps="30" aria-pressed="false">30</button>
-          <button type="button" data-fps="60" aria-pressed="true">60</button>
-          <button type="button" data-fps="120" aria-pressed="false">120</button>
-        </div>
       </div>
     </section>
 
-    <div class="stack">
-      <section class="panel" aria-label="This frame">
-        <h2>This frame</h2>
-        <p class="sub">What your Tick would compute right now.</p>
-        <dl class="rows">
-          <dt>elapsed</dt><dd id="oElapsed"></dd>
-          <dt>alpha</dt><dd id="oAlpha"></dd>
-          <dt>curve value</dt><dd id="oCurve"></dd>
-          <dt>offset</dt><dd class="lit" id="oOffset"></dd>
-          <dt>velocity</dt><dd class="lit" id="oVel"></dd>
-        </dl>
-      </section>
+    <div>
+      <section class="panel" aria-label="How each number becomes the next">
+        <h2>One number into the next</h2>
+        <p class="sub">The <b class="carry">highlighted</b> value in each sum is the answer from the line above. Colours match the arrows.</p>
+        <ol class="pipe">
+          <li data-kind="num"><span class="name">Elapsed</span><code class="expr" id="xElapsed"></code><span class="val" id="pElapsed"></span></li>
+          <li data-kind="num"><span class="name">Alpha</span><code class="expr" id="xAlpha"></code><span class="val" id="pAlpha"></span></li>
+          <li data-kind="num"><span class="name">Curve</span><code class="expr" id="xCurve"></code><span class="val" id="pCurve"></span></li>
+          <li data-kind="num"><span class="name">Offset</span><code class="expr" id="xOffset"></code><span class="val" id="pOffset"></span></li>
+          <li data-kind="move"><span class="name">Step</span><code class="expr" id="xStep"></code><span class="val" id="pStep"></span></li>
+          <li data-kind="place"><span class="name">Desired</span><code class="expr" id="xDesired"></code><span class="val" id="pDesired"></span></li>
+          <li data-kind="move"><span class="name">Gap</span><code class="expr" id="xGap"></code><span class="val" id="pGap"></span></li>
+          <li data-kind="vel"><span class="name">Velocity</span><code class="expr" id="xVel"></code><span class="val" id="pVel"></span></li>
+        </ol>
 
-      <section class="panel" aria-label="Frame budget">
-        <h2>Frame budget</h2>
-        <p class="sub">How far the bat jumps between two samples.</p>
-        <dl class="rows">
-          <dt>frames</dt><dd id="oFrames"></dd>
-          <dt>delta time</dt><dd id="oDt"></dd>
-          <dt>biggest step</dt><dd id="oStep"></dd>
-          <dt>contact width</dt><dd id="oWindow"></dd>
-        </dl>
-        <p class="note" id="oBudget"></p>
-        <div class="ctl"><button type="button" id="findGap">Put the puck in a gap</button></div>
+        <div class="kinds">
+          <div class="k-place">
+            <h3>A place</h3>
+            <p>Where something is. Its length means nothing on its own.</p>
+          </div>
+          <div class="k-move">
+            <h3>A move</h3>
+            <p>How far and which way, with no starting point of its own.</p>
+          </div>
+          <div class="k-vel">
+            <h3>A velocity</h3>
+            <p>A move divided by seconds. The only one physics can use.</p>
+          </div>
+        </div>
       </section>
     </div>
   </div>
 
-  <section class="panel wide" aria-label="The swing">
-    <h2>The swing, one frame at a time</h2>
-    <p class="sub">Each dot is a sampled position; the line joining them is the path a swept move travels. Drag the puck anywhere along the lane.</p>
-    <svg class="fig" id="trackFig" viewBox="0 0 1040 190" role="img" aria-label="A horizontal track showing sampled bat positions, the swept path between them, and a draggable puck with its contact band">
-      <rect id="band" y="52" height="76" rx="4"></rect>
-      <line id="lane" x1="70" y1="90" x2="930" y2="90" stroke="var(--grid-2)" stroke-width="1"></line>
-      <line id="startTick" y1="66" y2="114" stroke="var(--line-2)" stroke-width="1" stroke-dasharray="3 3"></line>
-      <g id="sweep"></g>
-      <g id="dots"></g>
-      <line id="puckTick" y1="44" y2="136" stroke="var(--ink-3)" stroke-width="1.5"></line>
-      <circle id="puck" class="grab" r="11" fill="var(--surface)" stroke="var(--ink-3)" stroke-width="2.5" tabindex="0" role="slider" aria-label="Puck position. Arrow keys move it."></circle>
-      <circle id="bat" r="9" fill="var(--accent)"></circle>
-      <text id="startLabel" y="152" fill="var(--ink-3)" font-size="12" font-family="IBM Plex Mono, monospace" text-anchor="middle">start</text>
-      <text id="puckLabel" y="172" fill="var(--ink-3)" font-size="12" font-family="IBM Plex Mono, monospace" text-anchor="middle"></text>
-    </svg>
-
-    <div class="ctl">
-      <label for="frame">Frame</label>
-      <input type="range" id="frame" min="0" max="6" step="1" value="0">
-      <output id="frameOut"></output>
-      <button type="button" id="play">Play</button>
-    </div>
-
-    <div class="verdicts">
-      <div class="v" id="vTeleport">
-        <h3>SetRelativeLocation</h3>
-        <p id="vTeleportText"></p>
-      </div>
-      <div class="v" id="vVelocity">
-        <h3>SetPhysicsLinearVelocity</h3>
-        <p id="vVelocityText"></p>
-      </div>
-    </div>
-
-    <div class="legend">
-      <span><i style="background:var(--accent)"></i>bat this frame</span>
-      <span><i style="background:var(--dot)"></i>sampled positions</span>
-      <span><i class="band" style="background:var(--accent-soft);border:1px solid var(--accent)"></i>contact band</span>
-    </div>
-  </section>
-
-  <section class="panel code" aria-label="Five lines, three kinds of number">
-    <h2>Five lines, three kinds of number</h2>
-    <p>The real arithmetic for the frame you have selected, with the punch running along +X from a start of <code>(120, -40)</code>. Each row is fed by the row above it: the <b class="carry">highlighted</b> number in every sum is the answer from the previous line. Follow one number down the list and you have followed the whole punch.</p>
-
-    <ol class="pipe">
-      <li>
-        <span class="name">Elapsed</span>
-        <code class="expr" id="xElapsed"></code>
-        <span class="val" id="pElapsed"></span>
-        <span class="kind k-num">number · s</span>
-      </li>
-      <li>
-        <span class="name">Alpha</span>
-        <code class="expr" id="xAlpha"></code>
-        <span class="val" id="pAlpha"></span>
-        <span class="kind k-num">number · 0 to 1</span>
-      </li>
-      <li>
-        <span class="name">Curve</span>
-        <code class="expr" id="xCurve"></code>
-        <span class="val" id="pCurve"></span>
-        <span class="kind k-num">number · 0 to 1</span>
-      </li>
-      <li>
-        <span class="name">Offset</span>
-        <code class="expr" id="xOffset"></code>
-        <span class="val" id="pOffset"></span>
-        <span class="kind k-num">number · cm</span>
-      </li>
-      <li>
-        <span class="name">Step</span>
-        <code class="expr" id="xStep"></code>
-        <span class="val" id="pStep"></span>
-        <span class="kind k-move">move · cm</span>
-      </li>
-      <li>
-        <span class="name">Desired</span>
-        <code class="expr" id="xDesired"></code>
-        <span class="val" id="pDesired"></span>
-        <span class="kind k-place">place</span>
-      </li>
-      <li>
-        <span class="name">Gap</span>
-        <code class="expr" id="xGap"></code>
-        <span class="val" id="pGap"></span>
-        <span class="kind k-move">move · cm</span>
-      </li>
-      <li>
-        <span class="name">Velocity</span>
-        <code class="expr" id="xVel"></code>
-        <span class="val" id="pVel"></span>
-        <span class="kind k-move">move · cm/s</span>
-      </li>
-    </ol>
-
-    <p class="note">Watch where the kind changes. It stays a plain number for four rows, becomes a <b>move</b> the moment the direction is multiplied in, becomes a <b>place</b> when that move is added to the start, and turns back into a <b>move</b> the moment one place is subtracted from another. Nothing else in the punch is a vector.</p>
-
-    <div class="kinds">
-      <div>
-        <h3>A place</h3>
-        <p>Where something is, counted from the world origin. On its own its length means nothing — <code>(120, -40)</code> is not "126 long", it is over there.</p>
-      </div>
-      <div>
-        <h3>A move</h3>
-        <p>How far and which way, with no starting point of its own. A place minus a place is always a move.</p>
-      </div>
-      <div>
-        <h3>A number</h3>
-        <p>No direction at all. Seconds, a fraction, a distance. It can stretch a move, never point one.</p>
-      </div>
-    </div>
-
-    <div class="rules">
-      <h3>What the maths lets you do</h3>
-      <ul>
-        <li><code>place - place</code> gives a <b>move</b> — that is how <code>Delta</code> is built</li>
-        <li><code>move / its length</code> gives a <b>direction</b>, a move of length 1</li>
-        <li><code>direction * number</code> gives a <b>move</b> of exactly that many centimetres</li>
-        <li><code>place + move</code> gives a <b>place</b> — that is the <code>Desired</code> line</li>
-        <li><code>move / seconds</code> gives a <b>velocity</b> — the last line, and the only one physics can use</li>
-        <li class="no"><code>place + place</code> is meaningless, and so is <code>place * number</code></li>
-      </ul>
-    </div>
-
-    <p class="note">The final divide is the whole difference between the two verdicts above. <code>Desired</code> is a place, and handing a place to <code>SetRelativeLocation</code> says <em>be there now</em>. Dividing by <code>DeltaTime</code> turns the same information into a speed, and handing that to <code>SetPhysicsLinearVelocity</code> says <em>travel there over this frame</em> — which is what gives the solver a line to test for contact.</p>
+  <section class="panel wide" aria-label="The same maths in C++">
+    <h2>The same five lines</h2>
+    <p>The first four rows above are plain numbers. The vector appears only when the direction is multiplied in, and the last line turns it into something the solver can act on.</p>
+<pre>PunchElapsed += DeltaTime;
+float Alpha    = PunchElapsed / PunchDuration;
+float Offset   = CurvePunch-&gt;GetFloatValue(Alpha) * PunchDistance;
+FVector Desired  = PunchStartLocation + TargetBatDirection * Offset;
+FVector Velocity = (Desired - Component-&gt;GetComponentLocation()) / DeltaTime;</pre>
+    <p style="margin-top:14px"><code>Desired</code> is a place, so handing it to <code>SetRelativeLocation</code> says <em>be there now</em> — the bat appears at each amber-free position having travelled through nothing, and pushes nothing. Dividing by <code>DeltaTime</code> turns the same information into the amber arrow, and <code>SetPhysicsLinearVelocity</code> makes the solver travel that arrow, which is what finds the puck.</p>
   </section>
 </div>
 
@@ -354,12 +245,17 @@ dl.rows dd.lit{color:var(--accent)}
 (function(){
 "use strict";
 var SVGNS="http://www.w3.org/2000/svg";
+var PX=4, X0=40, Y1=510;            // 4 px per centimetre
+var START={x:60,y:60};              // where the punch begins, in centimetres
+var DIR_LEN=34;                     // length of the drawn direction arrow, cm
+var VEL_SCALE=0.022, VEL_MAX=44;    // velocity is drawn scaled down, then clamped
 
-var BAT_R=5, PUCK_R=4;                 // centimetres
-var CX0=48, CX1=496, CY0=32, CY1=248;  // curve plot box
-var TX0=70, TX1=930;                   // track lane
+var state={ dur:0.10, dist:30, angle:0, frame:0, playing:false };
 
-var state={ dur:0.10, dist:30, fps:60, peakT:0.35, peakV:1, puck:22, frame:0, playing:false };
+function sx(x){ return X0 + x*PX; }
+function sy(y){ return Y1 - y*PX; }
+function f(n,d){ var p=Math.pow(10,d), r=Math.round(n*p)/p; if(Object.is(r,-0)) r=0; return r.toFixed(d); }
+function v2(x,y){ return "("+f(x,1)+", "+f(y,1)+")"; }
 
 function el(tag,attrs){
   var n=document.createElementNS(SVGNS,tag);
@@ -368,67 +264,38 @@ function el(tag,attrs){
 }
 function set(n,attrs){ for(var k in attrs){ if(Object.prototype.hasOwnProperty.call(attrs,k)) n.setAttribute(k,attrs[k]); } }
 function txt(id,s){ document.getElementById(id).textContent=s; }
-function f(n,d){ var p=Math.pow(10,d); var r=Math.round(n*p)/p; if(Object.is(r,-0)) r=0; return r.toFixed(d); }
+function expr(id,html){ document.getElementById(id).innerHTML=html; }
+function carry(v){ return '<b class="carry">'+v+"</b>"; }
 
-// Smoothstep either side of the peak — a stand-in for a float curve with
-// auto tangents. Rises to the peak, falls back to zero at alpha 1.
+// Rises to a peak at 0.35 and falls back to zero: strike, then return.
 function smooth(u){ return u*u*(3-2*u); }
 function curveVal(t){
-  if(t<=0) return 0;
-  if(t>=1) return 0;
-  if(t<state.peakT) return state.peakV*smooth(t/state.peakT);
-  return state.peakV*(1-smooth((t-state.peakT)/(1-state.peakT)));
+  if(t<=0||t>=1) return 0;
+  if(t<0.35) return smooth(t/0.35);
+  return 1-smooth((t-0.35)/0.65);
 }
-
 function samples(){
-  var n=Math.max(2,Math.round(state.dur*state.fps));
-  var dt=state.dur/n, out=[];
+  var n=Math.max(2,Math.round(state.dur*60)), dt=state.dur/n, out=[];
   for(var i=0;i<=n;i++){
     var t=i*dt, a=Math.min(1,t/state.dur);
-    out.push({ i:i, t:t, alpha:a, off:curveVal(a)*state.dist });
+    out.push({ t:t, alpha:a, off:curveVal(a)*state.dist });
   }
   return { list:out, dt:dt, n:n };
 }
+function dir(){ return { x:Math.cos(state.angle), y:Math.sin(state.angle) }; }
 
-// The first puck position, if any, that every sample steps over but the swept
-// path still crosses. Null when no gap is wider than the contact band.
-function findGap(s,w){
-  var maxP=s.list.length?0:0, i;
-  for(i=0;i<=s.n;i++) maxP=Math.max(maxP,s.list[i].off);
-  for(var p=0;p<=maxP;p+=0.1){
-    var landed=false, crossed=false;
-    for(i=0;i<=s.n;i++) if(Math.abs(s.list[i].off-p)<=w){ landed=true; break; }
-    if(landed) continue;
-    for(i=1;i<=s.n;i++){
-      var a=s.list[i-1].off, b=s.list[i].off;
-      if(Math.min(a,b)<=p+w && Math.max(a,b)>=p-w){ crossed=true; break; }
-    }
-    if(crossed) return Math.round(p*10)/10;
-  }
-  return null;
+var grid=document.getElementById("grid");
+for(var g=0;g<=120;g+=20){
+  grid.appendChild(el("line",{x1:sx(g),y1:sy(0),x2:sx(g),y2:sy(120),stroke:"var(--grid)","stroke-width":"1"}));
+  grid.appendChild(el("line",{x1:sx(0),y1:sy(g),x2:sx(120),y2:sy(g),stroke:"var(--grid)","stroke-width":"1"}));
 }
 
-function cx(t){ return CX0 + t*(CX1-CX0); }
-function cy(v){ return CY1 - v*(CY1-CY0); }
-function worldMax(){ return state.dist+12; }
-function tx(off){ return TX0 + (off/worldMax())*(TX1-TX0); }
-function fromTx(px){ return (px-TX0)/(TX1-TX0)*worldMax(); }
-
-var curveGrid=document.getElementById("curveGrid");
-for(var g=1;g<=4;g++){
-  var gx=cx(g/5), gy=cy(g/5);
-  curveGrid.appendChild(el("line",{x1:gx,y1:CY0,x2:gx,y2:CY1,stroke:"var(--grid)","stroke-width":"1"}));
-  curveGrid.appendChild(el("line",{x1:CX0,y1:gy,x2:CX1,y2:gy,stroke:"var(--grid)","stroke-width":"1"}));
-}
-
-var curvePath=document.getElementById("curvePath");
-var alphaLine=document.getElementById("alphaLine"), alphaDot=document.getElementById("alphaDot");
-var peakHandle=document.getElementById("peakHandle");
-var band=document.getElementById("band"), startTick=document.getElementById("startTick");
-var sweep=document.getElementById("sweep"), dots=document.getElementById("dots");
-var puck=document.getElementById("puck"), puckTick=document.getElementById("puckTick");
-var bat=document.getElementById("bat");
-var frameInput=document.getElementById("frame");
+var trail=document.getElementById("trail");
+var dirLine=document.getElementById("dirLine"), dirHandle=document.getElementById("dirHandle"), dirLabel=document.getElementById("dirLabel");
+var stepLine=document.getElementById("stepLine"), velLine=document.getElementById("velLine"), velLabel=document.getElementById("velLabel");
+var startDot=document.getElementById("startDot"), startLabel=document.getElementById("startLabel");
+var batDot=document.getElementById("batDot"), batLabel=document.getElementById("batLabel");
+var frameInput=document.getElementById("frame"), playBtn=document.getElementById("play");
 
 function render(){
   var s=samples();
@@ -436,222 +303,118 @@ function render(){
   frameInput.max=s.n;
   frameInput.value=state.frame;
 
-  // curve
-  var d="", i;
-  for(i=0;i<=120;i++){
-    var t=i/120;
-    d+=(i?"L":"M")+f(cx(t),2)+" "+f(cy(curveVal(t)),2);
+  var d=dir(), cur=s.list[state.frame];
+  var prevOff=state.frame>0 ? s.list[state.frame-1].off : cur.off;
+  var bat={ x:START.x+d.x*cur.off, y:START.y+d.y*cur.off };
+  var was={ x:START.x+d.x*prevOff, y:START.y+d.y*prevOff };
+  var speed=(cur.off-prevOff)/s.dt;
+  var vel={ x:d.x*speed, y:d.y*speed };
+
+  // direction arrow and its handle
+  var dTip={ x:START.x+d.x*DIR_LEN, y:START.y+d.y*DIR_LEN };
+  set(dirLine,{x1:sx(START.x),y1:sy(START.y),x2:sx(dTip.x),y2:sy(dTip.y)});
+  set(dirHandle,{cx:sx(dTip.x),cy:sy(dTip.y)});
+  set(dirLabel,{x:sx(dTip.x)+12,y:sy(dTip.y)+4});
+  dirLabel.textContent="dir "+v2(d.x,d.y);
+  dirHandle.setAttribute("aria-valuetext",Math.round(state.angle*180/Math.PI)+" degrees");
+
+  // the offset: start to bat
+  set(stepLine,{x1:sx(START.x),y1:sy(START.y),x2:sx(bat.x),y2:sy(bat.y)});
+  stepLine.style.display = cur.off>0.4 ? "" : "none";
+
+  // the velocity, drawn scaled and clamped so a fast punch stays on the grid
+  var vLen=Math.abs(speed)*VEL_SCALE;
+  var clamped=vLen>VEL_MAX;
+  if(clamped) vLen=VEL_MAX;
+  var sgn=speed<0?-1:1;
+  var vTip={ x:bat.x+d.x*vLen*sgn, y:bat.y+d.y*vLen*sgn };
+  set(velLine,{x1:sx(bat.x),y1:sy(bat.y),x2:sx(vTip.x),y2:sy(vTip.y)});
+  velLine.style.display = vLen>0.6 ? "" : "none";
+  set(velLabel,{x:sx(vTip.x)+10,y:sy(vTip.y)-8});
+  velLabel.textContent = vLen>0.6 ? (f(speed,0)+" cm/s"+(clamped?" (clipped)":"")) : "";
+
+  set(startDot,{cx:sx(START.x),cy:sy(START.y)});
+  set(startLabel,{x:sx(START.x)-12,y:sy(START.y)+22,"text-anchor":"end"});
+  startLabel.textContent="start "+v2(START.x,START.y);
+  set(batDot,{cx:sx(bat.x),cy:sy(bat.y)});
+  set(batLabel,{x:sx(bat.x)+14,y:sy(bat.y)+22});
+  batLabel.textContent=v2(bat.x,bat.y);
+
+  while(trail.firstChild) trail.removeChild(trail.firstChild);
+  for(var i=0;i<=state.frame;i++){
+    var p={ x:START.x+d.x*s.list[i].off, y:START.y+d.y*s.list[i].off };
+    trail.appendChild(el("circle",{cx:sx(p.x),cy:sy(p.y),r:3,fill:"var(--dot)",opacity:".5"}));
   }
-  curvePath.setAttribute("d",d);
-  set(peakHandle,{cx:cx(state.peakT),cy:cy(state.peakV)});
-  peakHandle.setAttribute("aria-valuetext","peak at alpha "+f(state.peakT,2)+", value "+f(state.peakV,2));
 
-  var cur=s.list[state.frame];
-  set(alphaLine,{x1:cx(cur.alpha),y1:CY0,x2:cx(cur.alpha),y2:CY1});
-  set(alphaDot,{cx:cx(cur.alpha),cy:cy(curveVal(cur.alpha))});
+  var ph=document.getElementById("phase");
+  if(state.frame===0) ph.innerHTML="<b>Ready.</b> The bat is at the start and nothing is moving.";
+  else if(speed>0.5) ph.innerHTML="<b>Striking.</b> Velocity points the same way as the offset — the bat is moving away from the start.";
+  else if(speed<-0.5) ph.innerHTML="<b>Returning.</b> Velocity has flipped to the opposite direction while the offset still points forward.";
+  else ph.innerHTML="<b>Turning.</b> At the top of the curve the bat is momentarily still, so velocity is nearly zero.";
 
-  // track
-  var w=BAT_R+PUCK_R;
-  var lo=Math.max(0,state.puck-w), hi=state.puck+w;
-  set(band,{x:tx(lo),width:Math.max(1,tx(hi)-tx(lo)),fill:"var(--accent-soft)",stroke:"var(--accent)","stroke-width":"1"});
-  set(startTick,{x1:tx(0),x2:tx(0)});
-  document.getElementById("startLabel").setAttribute("x",tx(0));
-  set(puck,{cx:tx(state.puck),cy:90});
-  set(puckTick,{x1:tx(state.puck),x2:tx(state.puck)});
-  var pl=document.getElementById("puckLabel");
-  set(pl,{x:tx(state.puck)});
-  pl.textContent="puck at "+f(state.puck,1)+" cm";
-  puck.setAttribute("aria-valuetext",f(state.puck,1)+" centimetres");
-
-  while(sweep.firstChild) sweep.removeChild(sweep.firstChild);
-  while(dots.firstChild) dots.removeChild(dots.firstChild);
-  for(i=1;i<=state.frame;i++){
-    sweep.appendChild(el("line",{
-      x1:tx(s.list[i-1].off),y1:90,x2:tx(s.list[i].off),y2:90,
-      stroke:"var(--dot)","stroke-width":"2",opacity:".45"
-    }));
-  }
-  for(i=0;i<=state.frame;i++){
-    dots.appendChild(el("circle",{cx:tx(s.list[i].off),cy:90,r:4,fill:"var(--dot)"}));
-  }
-  set(bat,{cx:tx(cur.off),cy:90});
-
-  // this frame
-  var prev=state.frame>0?s.list[state.frame-1].off:s.list[0].off;
-  var vel=state.frame>0?(cur.off-prev)/s.dt:0;
-  txt("oElapsed",f(cur.t,3)+" s");
-  txt("oAlpha",f(cur.alpha,3));
-  txt("oCurve",f(curveVal(cur.alpha),3));
-  txt("oOffset",f(cur.off,2)+" cm");
-  txt("oVel",f(vel,0)+" cm/s");
-
-  // The pipeline panel. Each row shows the real sum with the previous row's
-  // answer substituted in, so the chain is readable rather than asserted.
-  var SX=120, SY=-40;
-  function v2(x,y){ return "("+f(x,2)+", "+f(y,2)+")"; }
-  function carry(v){ return '<b class="carry">'+v+"</b>"; }
-  function expr(id,html){ document.getElementById(id).innerHTML=html; }
-
-  var prevT   = state.frame>0 ? s.list[state.frame-1].t : 0;
-  var curveV  = curveVal(cur.alpha);
-  var prevPos = v2(SX+prev,SY);
-  var gapX    = cur.off-prev;
+  // the chain
+  var prevT=state.frame>0 ? s.list[state.frame-1].t : 0;
+  var cv=curveVal(cur.alpha);
 
   expr("xElapsed", carry(f(prevT,3))+" + "+f(s.dt,3));
   txt("pElapsed", f(cur.t,3)+" s");
-
   expr("xAlpha", carry(f(cur.t,3))+" / "+f(state.dur,3));
   txt("pAlpha", f(cur.alpha,3));
-
   expr("xCurve", "Curve( "+carry(f(cur.alpha,3))+" )");
-  txt("pCurve", f(curveV,3));
+  txt("pCurve", f(cv,3));
+  expr("xOffset", carry(f(cv,3))+" &times; "+f(state.dist,0));
+  txt("pOffset", f(cur.off,1)+" cm");
+  expr("xStep", v2(d.x,d.y)+" &times; "+carry(f(cur.off,1)));
+  txt("pStep", v2(d.x*cur.off,d.y*cur.off));
+  expr("xDesired", v2(START.x,START.y)+" + "+carry(v2(d.x*cur.off,d.y*cur.off)));
+  txt("pDesired", v2(bat.x,bat.y));
+  expr("xGap", carry(v2(bat.x,bat.y))+" &minus; "+v2(was.x,was.y));
+  txt("pGap", v2(bat.x-was.x,bat.y-was.y));
+  expr("xVel", carry(v2(bat.x-was.x,bat.y-was.y))+" / "+f(s.dt,3));
+  txt("pVel", v2(vel.x,vel.y));
 
-  expr("xOffset", carry(f(curveV,3))+" &times; "+f(state.dist,0));
-  txt("pOffset", f(cur.off,2)+" cm");
-
-  expr("xStep", v2(1,0)+" &times; "+carry(f(cur.off,2)));
-  txt("pStep", v2(cur.off,0));
-
-  expr("xDesired", v2(SX,SY)+" + "+carry(v2(cur.off,0)));
-  txt("pDesired", v2(SX+cur.off,SY));
-
-  expr("xGap", carry(v2(SX+cur.off,SY))+" &minus; "+prevPos);
-  txt("pGap", v2(gapX,0));
-
-  expr("xVel", carry(v2(gapX,0))+" / "+f(s.dt,3));
-  txt("pVel", v2(vel,0)+" cm/s");
-
-  // budget
-  var big=0;
-  for(i=1;i<=s.n;i++) big=Math.max(big,Math.abs(s.list[i].off-s.list[i-1].off));
-  txt("oFrames",String(s.n));
-  txt("oDt",f(s.dt*1000,1)+" ms");
-  txt("oStep",f(big,2)+" cm");
-  txt("oWindow",f(2*w,1)+" cm");
-
-  var gap=findGap(s,w);
-  document.getElementById("oBudget").textContent = gap===null
-    ? "Every gap between samples is narrower than the contact band, so there is nowhere here for the puck to hide."
-    : "A step is wider than the contact band. Around " + f(gap,1) + " cm the bat is placed either side of the puck and never on it.";
-  document.getElementById("findGap").disabled = gap===null;
-
-  // Which sample, if any, is placed inside the puck.
-  var landed=-1, crossed=-1, contactSpeed=0;
-  for(i=0;i<=s.n;i++) if(landed<0 && Math.abs(s.list[i].off-state.puck)<=w) landed=i;
-  for(i=1;i<=s.n;i++){
-    var a=s.list[i-1].off, b=s.list[i].off;
-    if(crossed<0 && Math.min(a,b)<=hi && Math.max(a,b)>=lo){
-      crossed=i;
-      contactSpeed=Math.abs(b-a)/s.dt;
-    }
-  }
-  var vt=document.getElementById("vTeleport"), vv=document.getElementById("vVelocity");
-
-  // A placed body never pushes anything, whether or not it lands on the puck.
-  vt.className="v miss";
-  txt("vTeleportText", landed>=0
-    ? "The bat is placed inside the puck at frame "+landed+" — and nothing happens. A placed body carries no velocity, so there is no momentum to transfer, and without a sweep no hit is generated either. This is the one that looked right and moved nothing."
-    : "No sample even lands inside the puck. The bat is placed either side of it and never on it, so on top of having no velocity there is no overlap to react to.");
-
-  vv.className="v "+(crossed>=0?"hit":"miss");
-  txt("vVelocityText", crossed>=0
-    ? "The bat crosses the puck between frames "+(crossed-1)+" and "+crossed+", carrying "+f(contactSpeed,0)+" cm/s. The solver resolves that contact along the swept line and the puck leaves with a share of it."
-    : "The swept path never reaches the puck — at these settings the punch genuinely falls short, which is a real miss rather than a lost collision.");
-
-  txt("durOut",f(state.dur,2)+" s");
-  txt("distOut",f(state.dist,0)+" cm");
+  txt("durOut", f(state.dur,2)+" s");
+  txt("distOut", f(state.dist,0)+" cm");
   document.getElementById("frameOut").textContent=state.frame+" / "+s.n;
 }
 
-// curve peak dragging
-var curveFig=document.getElementById("curveFig"), dragPeak=false;
-function curvePoint(evt){
-  var r=curveFig.getBoundingClientRect();
-  return { x:(evt.clientX-r.left)*(520/r.width), y:(evt.clientY-r.top)*(292/r.height) };
+// dragging the direction handle
+var fig=document.getElementById("fig"), dragging=false;
+function angleAt(evt){
+  var r=fig.getBoundingClientRect();
+  var px=(evt.clientX-r.left)*(560/r.width), py=(evt.clientY-r.top)*(552/r.height);
+  return Math.atan2((Y1-py)/PX-START.y,(px-X0)/PX-START.x);
 }
-peakHandle.addEventListener("pointerdown",function(evt){
-  dragPeak=true;
-  if(curveFig.setPointerCapture) curveFig.setPointerCapture(evt.pointerId);
+dirHandle.addEventListener("pointerdown",function(evt){
+  dragging=true;
+  if(fig.setPointerCapture) fig.setPointerCapture(evt.pointerId);
   evt.preventDefault();
 });
-curveFig.addEventListener("pointermove",function(evt){
-  if(!dragPeak) return;
-  var p=curvePoint(evt);
-  state.peakT=Math.min(0.9,Math.max(0.1,(p.x-CX0)/(CX1-CX0)));
-  state.peakV=Math.min(1,Math.max(0.2,(CY1-p.y)/(CY1-CY0)));
-  render();
-});
-curveFig.addEventListener("pointerup",function(){ dragPeak=false; });
-curveFig.addEventListener("pointercancel",function(){ dragPeak=false; });
-peakHandle.addEventListener("keydown",function(evt){
-  var used=true;
-  if(evt.key==="ArrowRight") state.peakT=Math.min(0.9,state.peakT+0.02);
-  else if(evt.key==="ArrowLeft") state.peakT=Math.max(0.1,state.peakT-0.02);
-  else if(evt.key==="ArrowUp") state.peakV=Math.min(1,state.peakV+0.02);
-  else if(evt.key==="ArrowDown") state.peakV=Math.max(0.2,state.peakV-0.02);
+fig.addEventListener("pointermove",function(evt){ if(dragging){ state.angle=angleAt(evt); render(); } });
+fig.addEventListener("pointerup",function(){ dragging=false; });
+fig.addEventListener("pointercancel",function(){ dragging=false; });
+dirHandle.addEventListener("keydown",function(evt){
+  var step=(evt.shiftKey?15:5)*Math.PI/180, used=true;
+  if(evt.key==="ArrowLeft"||evt.key==="ArrowUp") state.angle+=step;
+  else if(evt.key==="ArrowRight"||evt.key==="ArrowDown") state.angle-=step;
   else used=false;
   if(used){ evt.preventDefault(); render(); }
 });
 
-// puck dragging
-var trackFig=document.getElementById("trackFig"), dragPuck=false;
-function trackPoint(evt){
-  var r=trackFig.getBoundingClientRect();
-  return (evt.clientX-r.left)*(1040/r.width);
-}
-puck.addEventListener("pointerdown",function(evt){
-  dragPuck=true;
-  if(trackFig.setPointerCapture) trackFig.setPointerCapture(evt.pointerId);
-  evt.preventDefault();
-});
-trackFig.addEventListener("pointermove",function(evt){
-  if(!dragPuck) return;
-  state.puck=Math.min(worldMax(),Math.max(0,Math.round(fromTx(trackPoint(evt))*10)/10));
-  render();
-});
-trackFig.addEventListener("pointerup",function(){ dragPuck=false; });
-trackFig.addEventListener("pointercancel",function(){ dragPuck=false; });
-puck.addEventListener("keydown",function(evt){
-  var s=evt.shiftKey?5:0.5, used=true;
-  if(evt.key==="ArrowRight") state.puck=Math.min(worldMax(),state.puck+s);
-  else if(evt.key==="ArrowLeft") state.puck=Math.max(0,state.puck-s);
-  else used=false;
-  if(used){ evt.preventDefault(); render(); }
-});
-
-document.getElementById("dur").addEventListener("input",function(){ state.dur=parseFloat(this.value); render(); });
-document.getElementById("dist").addEventListener("input",function(){
-  state.dist=parseFloat(this.value);
-  state.puck=Math.min(worldMax(),state.puck);
-  render();
-});
-Array.prototype.forEach.call(document.querySelectorAll("[data-fps]"),function(b){
-  b.addEventListener("click",function(){
-    state.fps=parseInt(b.getAttribute("data-fps"),10);
-    Array.prototype.forEach.call(document.querySelectorAll("[data-fps]"),function(o){
-      o.setAttribute("aria-pressed", o===b ? "true" : "false");
-    });
-    render();
-  });
-});
 frameInput.addEventListener("input",function(){ state.frame=parseInt(this.value,10); render(); });
+document.getElementById("dur").addEventListener("input",function(){ state.dur=parseFloat(this.value); render(); });
+document.getElementById("dist").addEventListener("input",function(){ state.dist=parseFloat(this.value); render(); });
 
-document.getElementById("findGap").addEventListener("click",function(){
-  var s=samples(), g=findGap(s,BAT_R+PUCK_R);
-  if(g!==null){ state.puck=g; render(); }
-});
-
-var playBtn=document.getElementById("play"), timer=null;
-function stop(){ if(timer) clearInterval(timer); timer=null; state.playing=false; playBtn.textContent="Play"; }
+var timer=null;
+function stop(){ if(timer) clearInterval(timer); timer=null; state.playing=false; playBtn.textContent="Simulate"; }
 playBtn.addEventListener("click",function(){
   if(state.playing){ stop(); return; }
   state.playing=true; playBtn.textContent="Stop";
   state.frame=0; render();
   timer=setInterval(function(){
-    var n=samples().n;
-    if(state.frame>=n){ stop(); return; }
+    if(state.frame>=samples().n){ stop(); return; }
     state.frame++; render();
-  },110);
+  },150);
 });
 
 render();

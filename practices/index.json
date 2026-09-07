@@ -3,11 +3,11 @@
     "id": "punch-bench",
     "menu": "Punch timing",
     "title": "Punch Bench",
-    "summary": "Step a curve-driven punch one simulated frame at a time and compare what placing the bat and sweeping the bat each hand to the physics solver.",
-    "why": "A punch built on SetRelativeLocation animates perfectly and moves nothing. Seeing the bat land squarely inside the puck while the verdict still reads no push is what separates two things that look identical on screen: where a body is, and how fast it is going.",
+    "summary": "Simulate a curve-driven punch and watch two arrows: how far the bat has moved from its start, and how fast it is going — which flips around the moment the strike becomes a return.",
+    "why": "A punch built on SetRelativeLocation animates perfectly and moves nothing. Seeing the velocity arrow appear, reverse and vanish while the offset arrow stays put is what separates two things that look identical on screen: where a body is, and how fast it is going.",
     "topics": [
+      "vectors",
       "physics",
-      "timing",
       "curves",
       "unreal"
     ],
