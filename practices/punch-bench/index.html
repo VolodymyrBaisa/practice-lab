@@ -153,6 +153,19 @@ button.go{background:var(--accent-soft);border-color:var(--accent);color:var(--a
 .wide p{margin:0 0 10px;color:var(--ink-2);font-size:14px;max-width:74ch}
 .wide p:last-of-type{margin-bottom:0}
 .wide code{font-family:"IBM Plex Mono",monospace;font-size:13px}
+.codelines{
+  list-style:none;margin:14px 0 0;padding:12px 8px;border-radius:10px;
+  background:var(--sunk);display:flex;flex-direction:column;gap:2px;overflow-x:auto;
+}
+.codelines li{
+  font-family:"IBM Plex Mono",monospace;font-size:13px;line-height:1.65;color:var(--ink);
+  padding:5px 11px;border-radius:6px;cursor:pointer;white-space:pre;
+  border-left:2px solid transparent;
+}
+.codelines li:hover{background:var(--surface)}
+.codelines li.on{background:var(--surface);border-left-color:var(--accent)}
+.linedesc{margin:14px 0 0;font-size:14px;color:var(--ink-2);max-width:74ch;min-height:4.2em}
+.linedesc b{color:var(--ink);font-weight:500}
 </style>
 </head>
 <body>
@@ -326,12 +339,15 @@ button.go{background:var(--accent-soft);border-color:var(--accent);color:var(--a
 
   <section class="panel wide" aria-label="The same maths in C++">
     <h2>The same five lines</h2>
-    <p>The first four rows above are plain numbers. The vector appears only when the direction is multiplied in, and the last line turns it into something the solver can act on.</p>
-<pre>PunchElapsed += DeltaTime;
-float Alpha    = PunchElapsed / PunchDuration;
-float Offset   = CurvePunch-&gt;GetFloatValue(Alpha) * PunchDistance;
-FVector Desired  = PunchStartLocation + TargetBatDirection * Offset;
-FVector Velocity = (Desired - Component-&gt;GetComponentLocation()) / DeltaTime;</pre>
+    <p>Click a line. It explains itself and builds the picture above to match, so you can see exactly what that one line added.</p>
+<ol class="codelines" id="codeLines">
+      <li data-line="1">PunchElapsed += DeltaTime;</li>
+      <li data-line="2">float Alpha    = PunchElapsed / PunchDuration;</li>
+      <li data-line="3">float Offset   = CurvePunch-&gt;GetFloatValue(Alpha) * PunchDistance;</li>
+      <li data-line="4">FVector Desired  = PunchStartLocation + TargetBatDirection * Offset;</li>
+      <li data-line="5">FVector Velocity = (Desired - Component-&gt;GetComponentLocation()) / DeltaTime;</li>
+    </ol>
+    <p class="linedesc" id="lineDesc"></p>
     <p style="margin-top:14px"><code>Desired</code> is a place, so handing it to <code>SetRelativeLocation</code> says <em>be there now</em> — the bat appears at each amber-free position having travelled through nothing, and pushes nothing. Dividing by <code>DeltaTime</code> turns the same information into the amber arrow, and <code>SetPhysicsLinearVelocity</code> makes the solver travel that arrow, which is what finds the puck.</p>
   </section>
 </div>
@@ -580,6 +596,7 @@ function render(){
   txt("distOut", f(state.dist,0)+" cm");
   document.getElementById("frameOut").textContent=state.frame+" / "+s.n;
   paintRows();
+  paintCode();
   document.getElementById("tickNote").textContent=
     "Sampled at "+FPS+" Hz, so DeltaTime is "+f(s.dt*1000,1)+" ms and the punch lasts "+s.n+" frames.";
 }
@@ -606,6 +623,38 @@ dirHandle.addEventListener("keydown",function(evt){
   else used=false;
   if(used){ evt.preventDefault(); render(); }
 });
+
+// The five C++ lines, what each one does, and how far up the chain it gets.
+var LINE_DESC={
+  1:"<b>A clock.</b> Add this frame's slice of time to the running total. Two frames into a 60 Hz tick and you have been punching for 33 milliseconds. Nothing here has a direction — it is a number of seconds and nothing more.",
+  2:"<b>Time becomes a fraction.</b> Dividing by the total says how far through the punch you are, from 0 to 1, whatever the duration happens to be. This is the same move as GetSafeNormal2D: divide by the whole so what is left can be scaled by anything.",
+  3:"<b>Two steps in one line.</b> The curve turns how far through the <em>time</em> into how far through the <em>motion</em> — not the same thing, and that difference is the curve's entire job. Multiplying by PunchDistance turns that fraction into centimetres. Still no direction, so there is still nothing to draw.",
+  4:"<b>The first vector.</b> TargetBatDirection has length 1, so multiplying it by the offset gives a move of exactly that many centimetres, pointing wherever the bat is aimed. Adding a move to a place gives a place: where the bat should be this frame.",
+  5:"<b>A place is not a speed.</b> Subtracting one place from another leaves the move made since last frame; dividing that by seconds turns it into centimetres per second. This is the only line physics can act on — a place says <em>be there now</em>, a velocity says <em>travel there over this frame</em>."
+};
+var STAGE_LINE={1:1,2:2,3:3,4:3,5:4,6:4,7:5,8:5};
+var LINE_STAGE={1:1,2:2,3:4,4:6,5:8};
+
+var codeLines=document.querySelectorAll("#codeLines li");
+Array.prototype.forEach.call(codeLines,function(li){
+  var n=parseInt(li.getAttribute("data-line"),10);
+  li.setAttribute("role","button");
+  li.setAttribute("tabindex","0");
+  function pick(){ state.stage=LINE_STAGE[n]; render(); }
+  li.addEventListener("click",pick);
+  li.addEventListener("keydown",function(e){
+    if(e.key==="Enter"||e.key===" "){ e.preventDefault(); pick(); }
+  });
+});
+function paintCode(){
+  var active=STAGE_LINE[state.stage];
+  Array.prototype.forEach.call(codeLines,function(li){
+    var n=parseInt(li.getAttribute("data-line"),10);
+    li.classList.toggle("on",n===active);
+    li.setAttribute("aria-pressed",String(n===active));
+  });
+  document.getElementById("lineDesc").innerHTML=LINE_DESC[active];
+}
 
 // Selecting a row reveals the picture up to that line and no further.
 var pipeRows=document.querySelectorAll(".pipe li");
