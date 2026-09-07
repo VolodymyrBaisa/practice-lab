@@ -125,6 +125,12 @@ button.go{background:var(--accent-soft);border-color:var(--accent);color:var(--a
 .pipe li[data-kind=place] .val{color:var(--place)}
 .pipe li[data-kind=vel] .val{color:var(--vel)}
 .carry{font-weight:500;color:var(--accent);border-bottom:1px solid var(--accent);padding-bottom:1px}
+.pipe li{cursor:pointer;border-left:2px solid transparent;padding-left:8px;border-radius:4px}
+.pipe li:hover{background:var(--sunk)}
+.pipe li.sel{border-left-color:var(--accent);background:var(--sunk)}
+.pipe li.later{opacity:.3}
+.pipe li.later .val{color:var(--ink-3)}
+.pipehint{margin:0 0 12px;font-size:12px;color:var(--ink-3)}
 @media (max-width:560px){
   .pipe li{grid-template-columns:1fr}
   .pipe .val{text-align:left}
@@ -171,6 +177,7 @@ button.go{background:var(--accent-soft);border-color:var(--accent);color:var(--a
         <circle id="dirHandle" class="grab" r="8" fill="var(--surface)" stroke="var(--line-2)" stroke-width="2" tabindex="0" role="slider" aria-label="Punch direction. Arrow keys turn it."></circle>
         <text id="dirLabel" font-size="12" font-family="IBM Plex Mono, monospace" fill="var(--ink-3)"></text>
         <line id="stepLine" stroke="var(--accent)" stroke-width="2.5" marker-end="url(#ah)"></line>
+        <line id="gapLine" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" opacity=".45"></line>
         <line id="velLine" stroke="var(--vel)" stroke-width="2.5" marker-end="url(#ah)"></line>
         <text id="velLabel" font-size="12" font-family="IBM Plex Mono, monospace" fill="var(--vel)"></text>
         <circle id="startDot" r="7" fill="none" stroke="var(--place)" stroke-width="2"></circle>
@@ -231,6 +238,7 @@ button.go{background:var(--accent-soft);border-color:var(--accent);color:var(--a
       <section class="panel" aria-label="How each number becomes the next">
         <h2>One number into the next</h2>
         <p class="sub">Each row names the variables it is built from, then shows the same sum with this frame's numbers. The <b class="carry">highlighted</b> value is always the answer from the line above.</p>
+        <p class="pipehint">Click any row to build the picture up to that line and no further.</p>
         <ol class="pipe">
           <li data-kind="num">
             <span class="name">Elapsed</span>
@@ -341,7 +349,7 @@ var EDGE=5;                         // keep drawn tips this far inside the grid
 var FPS=60;                         // the punch is sampled at a 60 Hz game tick
 var CX0=34, CX1=500, CY0=18, CY1=118; // the curve strip's plot box
 
-var state={ dur:0.10, dist:30, angle:0, frame:0, playing:false, peakT:0.35, peakV:1 };
+var state={ dur:0.10, dist:30, angle:0, frame:0, playing:false, peakT:0.35, peakV:1, stage:8 };
 
 function sx(x){ return X0 + x*PX; }
 function sy(y){ return Y1 - y*PX; }
@@ -394,6 +402,7 @@ for(var g=0;g<=WORLD;g+=20){
 var trail=document.getElementById("trail");
 var dirLine=document.getElementById("dirLine"), dirHandle=document.getElementById("dirHandle"), dirLabel=document.getElementById("dirLabel");
 var stepLine=document.getElementById("stepLine"), velLine=document.getElementById("velLine"), velLabel=document.getElementById("velLabel");
+var gapLine=document.getElementById("gapLine");
 var startDot=document.getElementById("startDot"), startLabel=document.getElementById("startLabel");
 var batDot=document.getElementById("batDot"), batLabel=document.getElementById("batLabel");
 var frameInput=document.getElementById("frame"), playBtn=document.getElementById("play");
@@ -464,9 +473,17 @@ function render(){
   dirLabel.textContent="dir "+v2(d.x,d.y);
   dirHandle.setAttribute("aria-valuetext",Math.round(state.angle*180/Math.PI)+" degrees");
 
+  // Each row of the chain reveals one more piece of the picture. Rows 1 to 4
+  // are plain numbers, so nothing new appears on the grid until row 5.
+  var st=state.stage;
+
   // the offset: start to bat
   set(stepLine,{x1:sx(START.x),y1:sy(START.y),x2:sx(bat.x),y2:sy(bat.y)});
-  stepLine.style.display = cur.off>0.4 ? "" : "none";
+  stepLine.style.display = (st>=5 && cur.off>0.4) ? "" : "none";
+
+  // the move made this frame, from where the bat was to where it is
+  set(gapLine,{x1:sx(was.x),y1:sy(was.y),x2:sx(bat.x),y2:sy(bat.y)});
+  gapLine.style.display = (st>=7 && Math.abs(cur.off-prevOff)>0.3) ? "" : "none";
 
   // The velocity is drawn scaled down, then shortened again if the arrow would
   // run off the grid. Either shortening is admitted in the label.
@@ -477,8 +494,8 @@ function render(){
   var shortened=vLen<want-0.01;
   var vTip={ x:bat.x+vd.x*vLen, y:bat.y+vd.y*vLen };
   set(velLine,{x1:sx(bat.x),y1:sy(bat.y),x2:sx(vTip.x),y2:sy(vTip.y)});
-  velLine.style.display = vLen>0.6 ? "" : "none";
-  if(vLen>0.6){
+  velLine.style.display = (st>=8 && vLen>0.6) ? "" : "none";
+  if(st>=8 && vLen>0.6){
     // Pick the side the label fits on, from its own estimated width, rather
     // than a fixed threshold that a longer suffix can overrun.
     var label=f(speed,0)+" cm/s"+(shortened?" (shortened)":"");
@@ -496,6 +513,8 @@ function render(){
   set(startDot,{cx:sx(START.x),cy:sy(START.y)});
   set(startLabel,{x:sx(START.x)-12,y:sy(START.y)+22,"text-anchor":"end"});
   startLabel.textContent="start "+v2(START.x,START.y);
+  batDot.style.display = st>=6 ? "" : "none";
+  batLabel.style.display = st>=6 ? "" : "none";
   set(batDot,{cx:sx(bat.x),cy:sy(bat.y)});
   var batRight=bat.x>WORLD*0.7;
   set(batLabel,{
@@ -506,16 +525,29 @@ function render(){
   batLabel.textContent=v2(bat.x,bat.y);
 
   while(trail.firstChild) trail.removeChild(trail.firstChild);
-  for(var i=0;i<=state.frame;i++){
+  for(var i=0;st>=6 && i<=state.frame;i++){
     var p={ x:START.x+d.x*s.list[i].off, y:START.y+d.y*s.list[i].off };
     trail.appendChild(el("circle",{cx:sx(p.x),cy:sy(p.y),r:3,fill:"var(--dot)",opacity:".5"}));
   }
 
   var ph=document.getElementById("phase");
-  if(state.frame===0) ph.innerHTML="<b>Ready.</b> The bat is at the start and nothing is moving.";
-  else if(speed>0.5) ph.innerHTML="<b>Striking.</b> Velocity points the same way as the offset — the bat is moving away from the start.";
-  else if(speed<-0.5) ph.innerHTML="<b>Returning.</b> Velocity has flipped to the opposite direction while the offset still points forward.";
-  else ph.innerHTML="<b>Turning.</b> At the top of the curve the bat is momentarily still, so velocity is nearly zero.";
+  if(st<=4){
+    ph.innerHTML="<b>Rows 1 to "+st+" are plain numbers.</b> There is nothing to draw on the grid yet — the curve strip below is the only picture they have.";
+  }else if(st===5){
+    ph.innerHTML="<b>The direction is multiplied in.</b> The teal arrow is the first vector: a move of "+f(cur.off,1)+" cm, pointing wherever the direction points.";
+  }else if(st===6){
+    ph.innerHTML="<b>Adding that move to the start gives a place.</b> The filled dot is where the bat should be this frame.";
+  }else if(st===7){
+    ph.innerHTML="<b>One place minus another gives a move.</b> The thick teal stub is the ground the bat covered since last frame.";
+  }else if(state.frame===0){
+    ph.innerHTML="<b>Ready.</b> The bat is at the start and nothing is moving.";
+  }else if(speed>0.5){
+    ph.innerHTML="<b>Striking.</b> Velocity points the same way as the offset — the bat is moving away from the start.";
+  }else if(speed<-0.5){
+    ph.innerHTML="<b>Returning.</b> Velocity has flipped to the opposite direction while the offset still points forward.";
+  }else{
+    ph.innerHTML="<b>Turning.</b> At the top of the curve the bat is momentarily still, so velocity is nearly zero.";
+  }
 
   // the chain
   var prevT=state.frame>0 ? s.list[state.frame-1].t : 0;
@@ -524,6 +556,8 @@ function render(){
   drawCurve();
   set(curveMark,{x1:ccx(cur.alpha),x2:ccx(cur.alpha)});
   set(curveDot,{cx:ccx(cur.alpha),cy:ccy(cv)});
+  curveMark.style.display = st>=2 ? "" : "none";
+  curveDot.style.display = st>=3 ? "" : "none";
 
   expr("xElapsed", carry(f(prevT,3))+" + "+f(s.dt,3));
   txt("pElapsed", f(cur.t,3)+" s");
@@ -545,6 +579,7 @@ function render(){
   txt("durOut", f(state.dur,2)+" s");
   txt("distOut", f(state.dist,0)+" cm");
   document.getElementById("frameOut").textContent=state.frame+" / "+s.n;
+  paintRows();
   document.getElementById("tickNote").textContent=
     "Sampled at "+FPS+" Hz, so DeltaTime is "+f(s.dt*1000,1)+" ms and the punch lasts "+s.n+" frames.";
 }
@@ -571,6 +606,25 @@ dirHandle.addEventListener("keydown",function(evt){
   else used=false;
   if(used){ evt.preventDefault(); render(); }
 });
+
+// Selecting a row reveals the picture up to that line and no further.
+var pipeRows=document.querySelectorAll(".pipe li");
+Array.prototype.forEach.call(pipeRows,function(li,i){
+  li.setAttribute("role","button");
+  li.setAttribute("tabindex","0");
+  function pick(){ state.stage=i+1; render(); }
+  li.addEventListener("click",pick);
+  li.addEventListener("keydown",function(e){
+    if(e.key==="Enter"||e.key===" "){ e.preventDefault(); pick(); }
+  });
+});
+function paintRows(){
+  Array.prototype.forEach.call(pipeRows,function(li,i){
+    li.classList.toggle("sel",i+1===state.stage);
+    li.classList.toggle("later",i+1>state.stage);
+    li.setAttribute("aria-pressed",String(i+1===state.stage));
+  });
+}
 
 frameInput.addEventListener("input",function(){ state.frame=parseInt(this.value,10); render(); });
 document.getElementById("dur").addEventListener("input",function(){ state.dur=parseFloat(this.value); render(); });
