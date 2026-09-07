@@ -97,6 +97,8 @@ button.go{background:var(--accent-soft);border-color:var(--accent);color:var(--a
   background:var(--sunk);color:var(--ink-2);
 }
 .phase b{color:var(--ink);font-weight:500}
+.curvebox{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.curvecap{margin:0 0 6px;font-size:12px;color:var(--ink-3)}
 .panel h2{font-size:16px;font-weight:500;margin:0 0 4px}
 .panel .sub{margin:0 0 14px;color:var(--ink-2);font-size:13px}
 .pipe{list-style:none;margin:0;padding:0}
@@ -185,6 +187,26 @@ button.go{background:var(--accent-soft);border-color:var(--accent);color:var(--a
       </div>
 
       <p class="phase" id="phase"></p>
+
+      <div class="curvebox">
+        <p class="curvecap">CurvePunch &mdash; alpha across, curve value up. The squares are its three keys.</p>
+        <svg class="fig" id="curveFig" viewBox="0 0 520 152" role="img" aria-label="The punch curve rising from zero to a peak at alpha 0.35 and falling back to zero, with a marker at the current alpha">
+          <line x1="34" y1="118" x2="500" y2="118" stroke="var(--grid-2)" stroke-width="1"></line>
+          <line x1="34" y1="18" x2="34" y2="118" stroke="var(--grid-2)" stroke-width="1"></line>
+          <line x1="34" y1="18" x2="500" y2="18" stroke="var(--grid)" stroke-width="1" stroke-dasharray="3 4"></line>
+          <path id="curvePath" fill="none" stroke="var(--accent)" stroke-width="2"></path>
+          <line id="curveMark" y1="18" y2="118" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="3 3"></line>
+          <circle id="curveDot" r="5" fill="var(--ink)"></circle>
+          <rect x="30" y="114" width="8" height="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5"></rect>
+          <rect x="192" y="14" width="8" height="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5"></rect>
+          <rect x="496" y="114" width="8" height="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5"></rect>
+          <text x="28" y="22" fill="var(--ink-3)" font-size="11" font-family="IBM Plex Mono, monospace" text-anchor="end">1</text>
+          <text x="28" y="122" fill="var(--ink-3)" font-size="11" font-family="IBM Plex Mono, monospace" text-anchor="end">0</text>
+          <text x="34" y="138" fill="var(--ink-3)" font-size="11" font-family="IBM Plex Mono, monospace">0.0</text>
+          <text x="267" y="138" fill="var(--ink-3)" font-size="11" font-family="IBM Plex Mono, monospace" text-anchor="middle">alpha</text>
+          <text x="500" y="138" fill="var(--ink-3)" font-size="11" font-family="IBM Plex Mono, monospace" text-anchor="end">1.0</text>
+        </svg>
+      </div>
 
       <div class="ctl">
         <label for="frame">Frame</label>
@@ -360,6 +382,18 @@ var stepLine=document.getElementById("stepLine"), velLine=document.getElementByI
 var startDot=document.getElementById("startDot"), startLabel=document.getElementById("startLabel");
 var batDot=document.getElementById("batDot"), batLabel=document.getElementById("batLabel");
 var frameInput=document.getElementById("frame"), playBtn=document.getElementById("play");
+var curvePath=document.getElementById("curvePath"), curveMark=document.getElementById("curveMark"), curveDot=document.getElementById("curveDot");
+
+function ccx(t){ return 34 + t*466; }
+function ccy(v){ return 118 - v*100; }
+(function drawCurve(){
+  var d="";
+  for(var i=0;i<=140;i++){
+    var t=i/140;
+    d+=(i?"L":"M")+f(ccx(t),1)+" "+f(ccy(curveVal(t)),1);
+  }
+  curvePath.setAttribute("d",d);
+})();
 
 function render(){
   var s=samples();
@@ -419,6 +453,9 @@ function render(){
   // the chain
   var prevT=state.frame>0 ? s.list[state.frame-1].t : 0;
   var cv=curveVal(cur.alpha);
+
+  set(curveMark,{x1:ccx(cur.alpha),x2:ccx(cur.alpha)});
+  set(curveDot,{cx:ccx(cur.alpha),cy:ccy(cv)});
 
   expr("xElapsed", carry(f(prevT,3))+" + "+f(s.dt,3));
   txt("pElapsed", f(cur.t,3)+" s");
