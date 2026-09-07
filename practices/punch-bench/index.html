@@ -109,7 +109,15 @@ button.go{background:var(--accent-soft);border-color:var(--accent);color:var(--a
   font-family:"IBM Plex Sans Condensed",sans-serif;text-transform:uppercase;
   letter-spacing:.1em;font-size:11px;color:var(--ink-3);
 }
-.pipe .expr{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink-2);overflow-x:auto;display:block;white-space:nowrap}
+.pipe .expr{display:flex;flex-direction:column;gap:3px;min-width:0}
+.pipe .src{
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3);
+  white-space:nowrap;overflow-x:auto;display:block;
+}
+.pipe .num{
+  font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink-2);
+  white-space:nowrap;overflow-x:auto;display:block;
+}
 .pipe .val{font-family:"IBM Plex Mono",monospace;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink);text-align:right;white-space:nowrap}
 .pipe li[data-kind=move] .val{color:var(--accent)}
 .pipe li[data-kind=place] .val{color:var(--place)}
@@ -199,16 +207,72 @@ button.go{background:var(--accent-soft);border-color:var(--accent);color:var(--a
     <div>
       <section class="panel" aria-label="How each number becomes the next">
         <h2>One number into the next</h2>
-        <p class="sub">The <b class="carry">highlighted</b> value in each sum is the answer from the line above. Colours match the arrows.</p>
+        <p class="sub">Each row names the variables it is built from, then shows the same sum with this frame's numbers. The <b class="carry">highlighted</b> value is always the answer from the line above.</p>
         <ol class="pipe">
-          <li data-kind="num"><span class="name">Elapsed</span><code class="expr" id="xElapsed"></code><span class="val" id="pElapsed"></span></li>
-          <li data-kind="num"><span class="name">Alpha</span><code class="expr" id="xAlpha"></code><span class="val" id="pAlpha"></span></li>
-          <li data-kind="num"><span class="name">Curve</span><code class="expr" id="xCurve"></code><span class="val" id="pCurve"></span></li>
-          <li data-kind="num"><span class="name">Offset</span><code class="expr" id="xOffset"></code><span class="val" id="pOffset"></span></li>
-          <li data-kind="move"><span class="name">Step</span><code class="expr" id="xStep"></code><span class="val" id="pStep"></span></li>
-          <li data-kind="place"><span class="name">Desired</span><code class="expr" id="xDesired"></code><span class="val" id="pDesired"></span></li>
-          <li data-kind="move"><span class="name">Gap</span><code class="expr" id="xGap"></code><span class="val" id="pGap"></span></li>
-          <li data-kind="vel"><span class="name">Velocity</span><code class="expr" id="xVel"></code><span class="val" id="pVel"></span></li>
+          <li data-kind="num">
+            <span class="name">Elapsed</span>
+            <span class="expr">
+              <code class="src">PunchElapsed + DeltaTime</code>
+              <code class="num" id="xElapsed"></code>
+            </span>
+            <span class="val" id="pElapsed"></span>
+          </li>
+          <li data-kind="num">
+            <span class="name">Alpha</span>
+            <span class="expr">
+              <code class="src">PunchElapsed / PunchDuration</code>
+              <code class="num" id="xAlpha"></code>
+            </span>
+            <span class="val" id="pAlpha"></span>
+          </li>
+          <li data-kind="num">
+            <span class="name">Curve</span>
+            <span class="expr">
+              <code class="src">CurvePunch-&gt;GetFloatValue( Alpha )</code>
+              <code class="num" id="xCurve"></code>
+            </span>
+            <span class="val" id="pCurve"></span>
+          </li>
+          <li data-kind="num">
+            <span class="name">Offset</span>
+            <span class="expr">
+              <code class="src">curve value &times; PunchDistance</code>
+              <code class="num" id="xOffset"></code>
+            </span>
+            <span class="val" id="pOffset"></span>
+          </li>
+          <li data-kind="move">
+            <span class="name">Step</span>
+            <span class="expr">
+              <code class="src">TargetBatDirection &times; Offset</code>
+              <code class="num" id="xStep"></code>
+            </span>
+            <span class="val" id="pStep"></span>
+          </li>
+          <li data-kind="place">
+            <span class="name">Desired</span>
+            <span class="expr">
+              <code class="src">PunchStartLocation + Step</code>
+              <code class="num" id="xDesired"></code>
+            </span>
+            <span class="val" id="pDesired"></span>
+          </li>
+          <li data-kind="move">
+            <span class="name">Gap</span>
+            <span class="expr">
+              <code class="src">Desired &minus; component location</code>
+              <code class="num" id="xGap"></code>
+            </span>
+            <span class="val" id="pGap"></span>
+          </li>
+          <li data-kind="vel">
+            <span class="name">Velocity</span>
+            <span class="expr">
+              <code class="src">Gap / DeltaTime</code>
+              <code class="num" id="xVel"></code>
+            </span>
+            <span class="val" id="pVel"></span>
+          </li>
         </ol>
 
         <div class="kinds">
