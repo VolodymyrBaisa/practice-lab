@@ -214,6 +214,7 @@ button.go{background:var(--accent-soft);border-color:var(--accent);color:var(--a
         <output id="frameOut"></output>
         <button type="button" class="go" id="play">Simulate</button>
       </div>
+      <p class="curvecap" id="tickNote"></p>
       <div class="ctl">
         <label for="dur">Duration</label>
         <input type="range" id="dur" min="0.05" max="0.4" step="0.01" value="0.1">
@@ -332,9 +333,13 @@ FVector Velocity = (Desired - Component-&gt;GetComponentLocation()) / DeltaTime;
 "use strict";
 var SVGNS="http://www.w3.org/2000/svg";
 var PX=4, X0=40, Y1=510;            // 4 px per centimetre
+var WORLD=120;                      // the grid spans 0 to 120 cm on both axes
 var START={x:60,y:60};              // where the punch begins, in centimetres
 var DIR_LEN=34;                     // length of the drawn direction arrow, cm
 var VEL_SCALE=0.022, VEL_MAX=44;    // velocity is drawn scaled down, then clamped
+var EDGE=5;                         // keep drawn tips this far inside the grid
+var FPS=60;                         // the punch is sampled at a 60 Hz game tick
+var CX0=34, CX1=500, CY0=18, CY1=118; // the curve strip's plot box
 
 var state={ dur:0.10, dist:30, angle:0, frame:0, playing:false, peakT:0.35, peakV:1 };
 
@@ -361,7 +366,7 @@ function curveVal(t){
   return state.peakV*(1-smooth((t-state.peakT)/(1-state.peakT)));
 }
 function samples(){
-  var n=Math.max(2,Math.round(state.dur*60)), dt=state.dur/n, out=[];
+  var n=Math.max(2,Math.round(state.dur*FPS)), dt=state.dur/n, out=[];
   for(var i=0;i<=n;i++){
     var t=i*dt, a=Math.min(1,t/state.dur);
     out.push({ t:t, alpha:a, off:curveVal(a)*state.dist });
@@ -370,10 +375,20 @@ function samples(){
 }
 function dir(){ return { x:Math.cos(state.angle), y:Math.sin(state.angle) }; }
 
+// The longest arrow from `from` along `d` whose tip stays inside the grid.
+function fitLength(from,d,want){
+  var lo=EDGE, hi=WORLD-EDGE, L=want;
+  if(d.x>1e-6) L=Math.min(L,(hi-from.x)/d.x);
+  if(d.x<-1e-6) L=Math.min(L,(lo-from.x)/d.x);
+  if(d.y>1e-6) L=Math.min(L,(hi-from.y)/d.y);
+  if(d.y<-1e-6) L=Math.min(L,(lo-from.y)/d.y);
+  return Math.max(0,L);
+}
+
 var grid=document.getElementById("grid");
-for(var g=0;g<=120;g+=20){
-  grid.appendChild(el("line",{x1:sx(g),y1:sy(0),x2:sx(g),y2:sy(120),stroke:"var(--grid)","stroke-width":"1"}));
-  grid.appendChild(el("line",{x1:sx(0),y1:sy(g),x2:sx(120),y2:sy(g),stroke:"var(--grid)","stroke-width":"1"}));
+for(var g=0;g<=WORLD;g+=20){
+  grid.appendChild(el("line",{x1:sx(g),y1:sy(0),x2:sx(g),y2:sy(WORLD),stroke:"var(--grid)","stroke-width":"1"}));
+  grid.appendChild(el("line",{x1:sx(0),y1:sy(g),x2:sx(WORLD),y2:sy(g),stroke:"var(--grid)","stroke-width":"1"}));
 }
 
 var trail=document.getElementById("trail");
@@ -386,8 +401,10 @@ var curvePath=document.getElementById("curvePath"), curveMark=document.getElemen
 
 var peakKey=document.getElementById("peakKey"), curveFig=document.getElementById("curveFig");
 
-function ccx(t){ return 34 + t*466; }
-function ccy(v){ return 118 - v*100; }
+function ccx(t){ return CX0 + t*(CX1-CX0); }
+function ccy(v){ return CY1 - v*(CY1-CY0); }
+function ccxInv(px){ return (px-CX0)/(CX1-CX0); }
+function ccyInv(py){ return (CY1-py)/(CY1-CY0); }
 function drawCurve(){
   var d="";
   for(var i=0;i<=140;i++){
@@ -410,8 +427,8 @@ curveFig.addEventListener("pointermove",function(evt){
   if(!dragKey) return;
   var r=curveFig.getBoundingClientRect();
   var px=(evt.clientX-r.left)*(520/r.width), py=(evt.clientY-r.top)*(152/r.height);
-  state.peakT=Math.min(0.9,Math.max(0.1,(px-34)/466));
-  state.peakV=Math.min(1,Math.max(0.2,(118-py)/100));
+  state.peakT=Math.min(0.9,Math.max(0.1,ccxInv(px)));
+  state.peakV=Math.min(1,Math.max(0.2,ccyInv(py)));
   render();
 });
 curveFig.addEventListener("pointerup",function(){ dragKey=false; });
@@ -451,22 +468,41 @@ function render(){
   set(stepLine,{x1:sx(START.x),y1:sy(START.y),x2:sx(bat.x),y2:sy(bat.y)});
   stepLine.style.display = cur.off>0.4 ? "" : "none";
 
-  // the velocity, drawn scaled and clamped so a fast punch stays on the grid
-  var vLen=Math.abs(speed)*VEL_SCALE;
-  var clamped=vLen>VEL_MAX;
-  if(clamped) vLen=VEL_MAX;
+  // The velocity is drawn scaled down, then shortened again if the arrow would
+  // run off the grid. Either shortening is admitted in the label.
+  var want=Math.abs(speed)*VEL_SCALE;
   var sgn=speed<0?-1:1;
-  var vTip={ x:bat.x+d.x*vLen*sgn, y:bat.y+d.y*vLen*sgn };
+  var vd={ x:d.x*sgn, y:d.y*sgn };
+  var vLen=Math.min(want,VEL_MAX,fitLength(bat,vd,VEL_MAX));
+  var shortened=vLen<want-0.01;
+  var vTip={ x:bat.x+vd.x*vLen, y:bat.y+vd.y*vLen };
   set(velLine,{x1:sx(bat.x),y1:sy(bat.y),x2:sx(vTip.x),y2:sy(vTip.y)});
   velLine.style.display = vLen>0.6 ? "" : "none";
-  set(velLabel,{x:sx(vTip.x)+10,y:sy(vTip.y)-8});
-  velLabel.textContent = vLen>0.6 ? (f(speed,0)+" cm/s"+(clamped?" (clipped)":"")) : "";
+  if(vLen>0.6){
+    // Pick the side the label fits on, from its own estimated width, rather
+    // than a fixed threshold that a longer suffix can overrun.
+    var label=f(speed,0)+" cm/s"+(shortened?" (shortened)":"");
+    var w=label.length*7, right=sx(vTip.x)+10+w>556;
+    set(velLabel,{
+      x: right ? Math.max(sx(vTip.x)-10, 4+w) : Math.min(sx(vTip.x)+10, 556-w),
+      y: vTip.y>WORLD*0.9 ? sy(vTip.y)+20 : sy(vTip.y)-9,
+      "text-anchor": right ? "end" : "start"
+    });
+    velLabel.textContent=label;
+  }else{
+    velLabel.textContent="";
+  }
 
   set(startDot,{cx:sx(START.x),cy:sy(START.y)});
   set(startLabel,{x:sx(START.x)-12,y:sy(START.y)+22,"text-anchor":"end"});
   startLabel.textContent="start "+v2(START.x,START.y);
   set(batDot,{cx:sx(bat.x),cy:sy(bat.y)});
-  set(batLabel,{x:sx(bat.x)+14,y:sy(bat.y)+22});
+  var batRight=bat.x>WORLD*0.7;
+  set(batLabel,{
+    x: batRight ? sx(bat.x)-14 : sx(bat.x)+14,
+    y: sy(bat.y)+22,
+    "text-anchor": batRight ? "end" : "start"
+  });
   batLabel.textContent=v2(bat.x,bat.y);
 
   while(trail.firstChild) trail.removeChild(trail.firstChild);
@@ -509,6 +545,8 @@ function render(){
   txt("durOut", f(state.dur,2)+" s");
   txt("distOut", f(state.dist,0)+" cm");
   document.getElementById("frameOut").textContent=state.frame+" / "+s.n;
+  document.getElementById("tickNote").textContent=
+    "Sampled at "+FPS+" Hz, so DeltaTime is "+f(s.dt*1000,1)+" ms and the punch lasts "+s.n+" frames.";
 }
 
 // dragging the direction handle
