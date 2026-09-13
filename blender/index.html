@@ -4,36 +4,46 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>(function(){var t="dark";try{var s=localStorage.getItem("lab-theme");if(s==="light"||s==="system")t=s;}catch(e){}if(t!=="system")document.documentElement.setAttribute("data-theme",t);})();</script>
-<title>Knowledge Hub</title>
-<meta name="description" content="Game development notes made with AI: practice drills for game maths, and reference notes for Blender and Unreal Engine.">
+<title>Blender — Knowledge Hub</title>
+<meta name="description" content="Blender reference pages: Geometry Nodes and modifier setups explained node by node.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500&family=IBM+Plex+Sans:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="../assets/site.css">
 </head>
-<body data-page="hub">
+<body data-page="section" data-section="blender" data-root="../">
 <div class="shell">
   <aside class="side">
     <div class="sidehead">
-      <p class="eyebrow">Knowledge hub</p>
+      <p class="eyebrow">Blender</p>
       <button type="button" class="theme" id="themeBtn">Theme: dark</button>
     </div>
-    <h2>Sections</h2>
-    <nav aria-label="Sections"><ul id="nav"></ul></nav>
+    <a class="back" href="../index.html">&larr; Knowledge hub</a>
+    <div id="sidenav"></div>
     <p class="count" id="count"></p>
   </aside>
 
   <main>
     <div class="masthead">
-      <h1>Game development notes</h1>
-      <p>Notes made with AI while learning to build games. The Practice Lab has drills for the maths behind game code. Blender and Unreal Engine hold reference notes — what each piece does, why it is there, and what broke on the way.</p>
+      <h1>Blender, node by node</h1>
+      <p>Notes on how the pieces of a game were built in Blender. Each page shows the finished setup, explains every node or modifier — what it does, why it is there, when to reach for it — and lists the mistakes that broke it on the way.</p>
     </div>
+    <div class="cards" id="cards"></div>
 
-    <div class="sections" id="sections"></div>
+    <section class="refs" id="refs" hidden aria-label="Reference">
+      <div class="refs-head">
+        <h2>Reference</h2>
+        <p>Look-up material rather than a drill. Open it beside the work, or on its own when you need to check how something is built.</p>
+      </div>
+      <div class="reflist" id="reflist"></div>
+    </section>
 
-    <section class="recent-wrap" aria-label="Recently added">
-      <h2>Recently added</h2>
-      <ul class="recent" id="recent"></ul>
+    <section class="related" id="related" hidden aria-label="Related practices">
+      <div class="refs-head">
+        <h2>Related practices</h2>
+        <p>Drills from the Practice Lab that exercise this area.</p>
+      </div>
+      <div class="cards" id="relcards"></div>
     </section>
 
     <footer class="colophon">
@@ -42,8 +52,8 @@
   </main>
 </div>
 
-<script src="assets/manifest.js"></script>
-<script src="assets/site.js"></script>
+<script src="../assets/manifest.js"></script>
+<script src="../assets/site.js"></script>
 <script>
 (function(){
   var order=["dark","light","system"];

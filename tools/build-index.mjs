@@ -1,7 +1,7 @@
 // Scans practices/*/meta.json and references/*/meta.json and regenerates the site index.
 // Run with: node tools/build-index.mjs
 // The Pages workflow runs this on every push, so adding a folder is the only
-// step needed to make an entry appear on the root page.
+// step needed to make an entry appear on the hub and its section page.
 
 import { readdir, readFile, writeFile, stat } from "node:fs/promises";
 import { join, dirname } from "node:path";
@@ -10,6 +10,10 @@ import { fileURLToPath } from "node:url";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const REQUIRED = ["id", "menu", "title", "summary", "why", "added"];
+
+// Which part of the hub an entry is listed under. A practice or reference
+// without a `section` belongs to the Practice Lab.
+const SECTIONS = ["lab", "blender", "unreal"];
 
 // Each collection is a folder of self-contained entries and a global the root
 // page reads. Adding a third would be one more line here.
@@ -67,6 +71,12 @@ async function scan(collection) {
       continue;
     }
 
+    const section = meta.section || "lab";
+    if (!SECTIONS.includes(section)) {
+      fail(`${label}/meta.json has section "${section}" — use one of: ${SECTIONS.join(", ")}.`);
+      continue;
+    }
+
     const entryFile = meta.entry || "index.html";
     try {
       await stat(join(base, entry.name, entryFile));
@@ -82,6 +92,7 @@ async function scan(collection) {
       summary: meta.summary,
       why: meta.why,
       topics: Array.isArray(meta.topics) ? meta.topics : [],
+      section,
       added: meta.added,
       href: `${collection.dir}/${meta.id}/${entryFile}`,
     });

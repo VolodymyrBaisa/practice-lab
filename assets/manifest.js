@@ -12,6 +12,7 @@ window.PRACTICES = [
       "curves",
       "unreal"
     ],
+    "section": "lab",
     "added": "2026-09-06",
     "href": "practices/punch-bench/index.html"
   },
@@ -25,6 +26,7 @@ window.PRACTICES = [
       "vectors",
       "maths"
     ],
+    "section": "lab",
     "added": "2026-09-03",
     "href": "practices/normalize-bench/index.html"
   },
@@ -39,11 +41,28 @@ window.PRACTICES = [
       "unreal",
       "c++"
     ],
+    "section": "lab",
     "added": "2026-09-03",
     "href": "practices/snake-vector-bench/index.html"
   }
 ];
 window.REFERENCES = [
+  {
+    "id": "blender-nodes-along-a-curve",
+    "menu": "Nodes along a curve",
+    "title": "Geometry Nodes Along a Curve",
+    "summary": "A chain loop and a railway track, both built with Geometry Nodes on a curve. Why one tree copies rigid pieces and the other bends a rail, both trees drawn node by node, step-by-step recipes with checkpoints, every node explained — what it does, why it is there, when to use it — and the mistakes that broke it on the way.",
+    "why": "Look-up material, not a drill. Two trees that both put things on a curve look nothing alike, and copying the wrong one leaves gaps on every turn. This is the page to open before building the next one alone.",
+    "topics": [
+      "blender",
+      "geometry nodes",
+      "curves",
+      "instancing"
+    ],
+    "section": "blender",
+    "added": "2026-09-13",
+    "href": "references/blender-nodes-along-a-curve/index.html"
+  },
   {
     "id": "unreal-gameplay-framework",
     "menu": "Framework map",
@@ -55,6 +74,7 @@ window.REFERENCES = [
       "gameplay framework",
       "c++"
     ],
+    "section": "unreal",
     "added": "2026-09-04",
     "href": "references/unreal-gameplay-framework/index.html"
   }

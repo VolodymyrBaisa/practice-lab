@@ -6,13 +6,22 @@ Small single-page tools for the maths and mechanics behind game code. Each one l
 write the answer yourself, draws what you wrote, and tells you when it only works by accident.
 
 Published with GitHub Pages at <https://volodymyrbaisa.github.io/practice-lab/>. The root
-page builds its menu and cards from the folders on disk — adding a folder is the only
-step needed to make a new entry appear.
+page is a knowledge hub with three sections, each with its own page:
+
+| Section         | Page                  | What lives there                                        |
+| --------------- | --------------------- | ------------------------------------------------------- |
+| Practice Lab    | `lab/index.html`      | The drills for game maths and mechanics.                |
+| Blender         | `blender/index.html`  | How things were built in Blender, node by node.         |
+| Unreal Engine   | `unreal/index.html`   | Unreal reference pages, plus practices tagged `unreal`. |
+
+The hub and the section pages build their menus and cards from the folders on disk —
+adding a folder is the only step needed to make a new entry appear.
 
 There are two collections. **Practices** (`practices/`) are the drills: you write the
 answer, the page draws it and grades it. **References** (`references/`) are look-up
 material — no grading, no answer to write. They share the same folder shape and the same
-`meta.json`, and both are listed on the root page under their own heading.
+`meta.json`. The collection says what kind of page it is; the `section` field says which
+part of the hub lists it.
 
 ## Adding a practice or a reference
 
@@ -36,6 +45,7 @@ Put it under `references/` if they are looking something up.
   "id": "your-practice-id",
   "menu": "Short menu label",
   "title": "The Page Name",
+  "section": "lab",
   "summary": "One or two sentences on what you actually do on the page.",
   "why": "The mistake or confusion this exists to fix. Be specific about the failure.",
   "topics": ["vectors", "unreal"],
@@ -49,6 +59,7 @@ Put it under `references/` if they are looking something up.
 | `id`      | yes      | Must match the folder name exactly.                             |
 | `menu`    | yes      | Sidebar label. Keep it to two or three words.                   |
 | `title`   | yes      | Card heading and the page's own `<title>`.                      |
+| `section` | no       | `lab`, `blender` or `unreal`. Defaults to `lab`.                 |
 | `summary` | yes      | What you do on the page.                                        |
 | `why`     | yes      | Why it exists — the specific mistake it targets.                |
 | `topics`  | no       | Tags shown on the card. Name the concept, not an engine release.|
@@ -67,7 +78,8 @@ the site works when opened straight from disk, and the Pages workflow regenerate
 every push — so if you forget to run it locally, the deployed site is still correct.
 
 The script refuses an entry whose `meta.json` is missing a required field, whose `id`
-does not match its folder, or whose entry file is absent. It reports the problem and
+does not match its folder, whose `section` is not one of the three, or whose entry file
+is absent. It reports the problem and
 exits non-zero, which fails the build rather than quietly dropping the page.
 
 ## Local preview
@@ -87,6 +99,8 @@ because the manifest is a plain script rather than a `fetch`.
   override the tokens twice: under `@media (prefers-color-scheme: dark)` guarded as
   `:root:not([data-theme="light"])`, and again under `:root[data-theme="dark"]`. Both dark
   blocks set `color-scheme:dark`. Set an explicit `background` on `body`.
+- **Link back to the section.** The crumb at the top of a page points at its section page
+  (`../../lab/index.html`, `../../blender/index.html` or `../../unreal/index.html`), not the hub.
 - **Carry the theme toggle.** The site is dark by default and the choice is stored in
   `localStorage` under `lab-theme`, cycling dark → light → system. Each page carries its own
   copy of two things, deliberately, so the page still stands alone: a one-line script in

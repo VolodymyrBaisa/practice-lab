@@ -1,0 +1,973 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>(function(){var t="dark";try{var s=localStorage.getItem("lab-theme");if(s==="light"||s==="system")t=s;}catch(e){}if(t!=="system")document.documentElement.setAttribute("data-theme",t);})();</script>
+<title>Geometry Nodes Along a Curve</title>
+<meta name="description" content="How a chain loop and a railway track are built with Blender Geometry Nodes on a curve: rigid copies versus a bent rail, every node explained, recipes with checkpoints, and the mistakes on the way.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --ground:#F1F4F1; --surface:#FFFFFF; --surface-2:#E8ECE8;
+  --ink:#141E1B; --ink-2:#4E5B57; --muted:#7E8A85;
+  --rail:#B6C0BA; --hair:#D4DBD6;
+  --accent:#0B7A5E; --accent-soft:#DAEFE7; --accent-ink:#075243;
+  --rigid:#3B5F91; --rigid-bg:#DEE5F0;
+  --bend:#8A6A12;  --bend-bg:#F5EBD3;
+  --bad:#A33326;   --bad-bg:#F6E2DE;
+
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --cond:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ground:#0F1617; --surface:#18211F; --surface-2:#131B1A;
+    --ink:#E5ECE8; --ink-2:#A2AFAA; --muted:#7A8681;
+    --rail:#3A4744; --hair:#283432;
+    --accent:#45D3A5; --accent-soft:#10312A; --accent-ink:#8DE8C6;
+    --rigid:#85AEE4; --rigid-bg:#17253A;
+    --bend:#D9AE55;  --bend-bg:#2E2716;
+    --bad:#F09383;   --bad-bg:#3A1F1B;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#0F1617; --surface:#18211F; --surface-2:#131B1A;
+  --ink:#E5ECE8; --ink-2:#A2AFAA; --muted:#7A8681;
+  --rail:#3A4744; --hair:#283432;
+  --accent:#45D3A5; --accent-soft:#10312A; --accent-ink:#8DE8C6;
+  --rigid:#85AEE4; --rigid-bg:#17253A;
+  --bend:#D9AE55;  --bend-bg:#2E2716;
+  --bad:#F09383;   --bad-bg:#3A1F1B;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+a:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+code{font-family:var(--mono);font-size:.86em;color:var(--ink)}
+b,strong{font-weight:500;color:var(--ink)}
+
+.crumb{max-width:1140px;margin:0 auto;padding:20px 22px 0;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.crumb a{color:var(--muted);font-family:var(--cond);text-transform:uppercase;letter-spacing:.1em;font-size:11px}
+.crumb a:hover{color:var(--accent);text-decoration:none}
+.theme{font:inherit;font-family:var(--cond);text-transform:uppercase;letter-spacing:.1em;font-size:11px;color:var(--muted);background:none;border:1px solid var(--hair);padding:5px 11px;border-radius:99px;cursor:pointer;white-space:nowrap}
+.theme:hover{color:var(--ink);border-color:var(--rail)}
+
+.wrap{max-width:1140px;margin:0 auto;padding:10px 22px 72px}
+
+.mast{display:flex;flex-direction:column;gap:9px;margin-bottom:14px}
+.eyebrow{font-family:var(--cond);font-weight:500;text-transform:uppercase;letter-spacing:.12em;font-size:12px;color:var(--muted);margin:0}
+h1{font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1.15;margin:0;text-wrap:balance}
+.standfirst{font-size:15px;color:var(--ink-2);max-width:68ch;margin:0}
+.mast-rule{height:1px;background:var(--hair)}
+
+.navbar{position:sticky;top:0;z-index:20;background:var(--ground);border-bottom:1px solid var(--hair);padding:11px 0 10px;margin-bottom:26px}
+.searchrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#q{flex:1 1 18rem;min-width:12rem;font-family:var(--mono);font-size:13px;padding:7px 10px;color:var(--ink);background:var(--surface);border:1px solid var(--rail);border-radius:7px}
+#q::placeholder{color:var(--muted)}
+#q:focus-visible{border-color:var(--accent)}
+#count{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+.toc{margin:0 0 36px;display:flex;flex-direction:column;gap:16px}
+.toc-lead{margin:0;padding:12px 15px;border-radius:10px;background:var(--accent-soft);color:var(--ink-2);font-size:13.5px}
+.tocgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));gap:14px}
+.tocgroup{background:var(--surface);border:1px solid var(--hair);border-top:2px solid var(--accent);border-radius:10px;padding:14px 15px;display:flex;flex-direction:column;gap:5px}
+.tocgroup .gn{margin:0;font-family:var(--cond);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.tocgroup .gt{margin:0;font-size:15px;font-weight:500;color:var(--ink)}
+.tocgroup .gd{margin:0 0 5px;font-size:12.5px;color:var(--muted);line-height:1.45}
+.tocgroup ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.tocgroup li a{display:block;padding:3px 7px;margin-left:-7px;border-radius:6px;font-size:13px;color:var(--ink-2)}
+.tocgroup li a:hover{background:var(--accent-soft);color:var(--accent-ink);text-decoration:none}
+
+.part{margin:0 0 26px;padding-top:22px;border-top:2px solid var(--accent);display:flex;flex-direction:column;gap:3px;scroll-margin-top:76px}
+.part .pn{margin:0;font-family:var(--cond);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.part .pt{margin:0;font-size:24px;font-weight:500;letter-spacing:-.015em;color:var(--ink)}
+.part .pd{margin:2px 0 0;font-size:13.5px;color:var(--ink-2);max-width:66ch}
+
+section{display:flex;flex-direction:column;gap:14px;margin-bottom:46px;scroll-margin-top:76px}
+.sec-head{display:flex;flex-direction:column;gap:4px}
+h2{font-size:21px;font-weight:500;letter-spacing:-.012em;margin:0;text-wrap:balance}
+h3{font-size:16px;font-weight:500;margin:0}
+.sec-note{color:var(--ink-2);font-size:14px;max-width:72ch;margin:0}
+p{margin:0}
+.prose{display:flex;flex-direction:column;gap:10px;max-width:74ch;color:var(--ink-2);font-size:14.5px}
+
+/* ---------- rigid / bending ---------- */
+.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(18rem,1fr));gap:14px}
+.idea{background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:9px}
+.idea.rigid{border-top:3px solid var(--rigid)}
+.idea.bend{border-top:3px solid var(--bend)}
+.idea .tag{font-family:var(--cond);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.idea.rigid .tag{color:var(--rigid)}
+.idea.bend .tag{color:var(--bend)}
+.idea h3{font-size:19px}
+.idea p{color:var(--ink-2);font-size:14px}
+.idea .used{font-size:13px;color:var(--muted)}
+
+.rule{margin:0;padding:12px 15px;border-radius:10px;background:var(--surface);border:1px solid var(--hair);border-left:3px solid var(--accent);font-size:14px;color:var(--ink-2);max-width:78ch}
+.rule b{display:block;font-family:var(--cond);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:3px}
+
+/* ---------- tables ---------- */
+.scroller{overflow-x:auto;padding-bottom:4px}
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--hair);border-radius:10px;overflow:hidden;font-size:13.5px}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--hair)}
+thead th{font-family:var(--cond);font-weight:500;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--surface-2)}
+tbody th{font-weight:500;color:var(--ink);white-space:nowrap}
+td{color:var(--ink-2)}
+tr:last-child th,tr:last-child td{border-bottom:none}
+.compare{min-width:46rem}
+.compare td.rg{background:linear-gradient(var(--rigid-bg),var(--rigid-bg)) left/3px 100% no-repeat}
+.compare td.bd{background:linear-gradient(var(--bend-bg),var(--bend-bg)) left/3px 100% no-repeat}
+
+/* ---------- node graphs (drawn like Blender's editor, in either theme) ---------- */
+.graphbox{display:flex;flex-direction:column;gap:8px}
+.graphbox .gh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.graphbox .gh .step{font-family:var(--cond);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.graphscroll{overflow-x:auto;border-radius:10px;border:1px solid var(--hair)}
+.graph{position:relative;background:#1d1d1d;background-image:radial-gradient(#2c2c2c 1px,transparent 1px);background-size:22px 22px;font-family:var(--sans)}
+.graph svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.bn{position:absolute;background:#303030;border:1px solid #161616;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.45);color:#e6e6e6;font-size:12px;line-height:1}
+.bn .bh{height:24px;display:flex;align-items:center;padding:0 9px;border-radius:5px 5px 0 0;font-size:12px;color:#f2f2f2;white-space:nowrap;overflow:hidden}
+.bn.c-group .bh{background:#3d3d3d}
+.bn.c-input .bh{background:#83314a}
+.bn.c-geo .bh{background:#1d725e}
+.bn.c-conv .bh{background:#246283}
+.bn.c-vec .bh{background:#3c3c83}
+.bn.stub{background:#262626;border:1px dashed #6b6b6b;box-shadow:none}
+.bn.stub .bh{background:transparent;color:#a9a9a9;font-style:italic}
+.bn .rows{padding:3px 0 5px}
+.bn .r{position:relative;height:22px;display:flex;align-items:center;padding:0 10px;gap:6px;white-space:nowrap}
+.bn .r.out{justify-content:flex-end}
+.bn .r .lab{color:#dcdcdc}
+.bn .r .val{margin-left:auto;background:#545454;color:#eee;border-radius:3px;padding:2px 6px;font-size:11px}
+.bn .r.prop .pill{flex:1;text-align:center;background:#282828;border:1px solid #1a1a1a;color:#e8e8e8;border-radius:4px;padding:3px 6px;font-size:11px}
+.bn .r.prop .pill.on{background:#4772b3;border-color:#3a5f96}
+.sk{position:absolute;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;border:1px solid #111}
+.r.in .sk{left:-6px}
+.r.out .sk{right:-6px}
+.sk.geo{background:#00d6a3}
+.sk.float{background:#a1a1a1}
+.sk.int{background:#598c5c}
+.sk.vec{background:#6363c7}
+.sk.rot{background:#a663c7}
+.sk.bool{background:#cca6d6}
+.sk.obj{background:#ed9e5c}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:12.5px;color:var(--ink-2)}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.legend .ln{display:inline-block;width:22px;height:0;border-top:2px solid var(--ink-2);margin-right:5px;vertical-align:3px}
+.legend .ln.dash{border-top-style:dashed}
+.readit{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:5px;color:var(--ink-2);font-size:14px;max-width:80ch}
+.readit li::marker{color:var(--muted);font-family:var(--mono);font-size:12px}
+.scrollhint{font-size:12px;color:var(--muted)}
+
+/* ---------- recipes ---------- */
+.recipe{display:grid;grid-template-columns:repeat(auto-fit,minmax(20rem,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.card h3{font-size:16px}
+.card .kicker{font-family:var(--cond);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0}
+ol.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:7px;color:var(--ink-2);font-size:14px}
+ol.steps li::marker{font-family:var(--mono);font-size:12px;color:var(--muted)}
+ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;color:var(--ink-2);font-size:14px}
+.check{margin:2px 0 0;padding:9px 12px;border-radius:8px;background:var(--accent-soft);color:var(--ink-2);font-size:13.5px}
+.check b{font-family:var(--cond);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink);margin-right:6px}
+
+/* ---------- node cards ---------- */
+.nodes{display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:14px}
+.nd{background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:9px;scroll-margin-top:80px}
+.nd .nh{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.nd .sw{width:12px;height:12px;border-radius:3px;flex:none}
+.sw.c-group{background:#6b6b6b}.sw.c-input{background:#b04a68}.sw.c-geo{background:#23957a}.sw.c-conv{background:#2f7fa8}.sw.c-vec{background:#5959b8}
+.nd h3{font-size:16px}
+.nd .cat{font-family:var(--cond);font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.nd .uses{margin-left:auto;display:flex;gap:5px;flex-wrap:wrap}
+.nd .uses span{font-family:var(--mono);font-size:10.5px;padding:1px 7px;border-radius:99px;background:var(--surface-2);color:var(--ink-2)}
+.nd dl{margin:0;display:grid;grid-template-columns:7.2rem minmax(0,1fr);gap:6px 12px;font-size:13.5px}
+.nd dt{font-family:var(--cond);font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding-top:3px}
+.nd dd{margin:0;color:var(--ink-2)}
+.nd dd.warn{color:var(--ink)}
+@media (max-width:520px){.nd dl{grid-template-columns:1fr}.nd dt{padding-top:6px}}
+
+/* ---------- gotchas ---------- */
+.gotchas td:first-child{color:var(--ink);font-weight:500;min-width:13rem}
+.gotchas td:nth-child(2){min-width:15rem}
+.gotchas td:nth-child(3){min-width:15rem}
+
+.note{font-size:13px;color:var(--muted);max-width:80ch}
+</style>
+</head>
+<body>
+<p class="crumb"><a href="../../blender/index.html">&larr; Blender</a><button type="button" class="theme" id="themeBtn">Theme: dark</button></p>
+<div class="wrap">
+  <header class="mast">
+    <p class="eyebrow">Blender &middot; Geometry Nodes reference</p>
+    <h1>Geometry Nodes Along a Curve</h1>
+    <div class="mast-rule"></div>
+    <p class="standfirst">A rail handcar has a chain loop, and it runs on a railway track. Both are Geometry Nodes sitting on a curve, yet the two node trees look nothing alike. One question explains the difference: <b>does the part stay rigid, or does it have to bend?</b> This page shows both trees, every node in them — what it does, why it is there, when to use it — and the mistakes that broke them on the way.</p>
+  </header>
+
+  <nav class="navbar" aria-label="Filter">
+    <div class="searchrow">
+      <input id="q" type="search" placeholder="Filter nodes and fixes — try &quot;Sample Curve&quot;, &quot;rotation&quot;, &quot;cm&quot;" aria-label="Filter nodes and fixes">
+      <span id="count"></span>
+    </div>
+  </nav>
+
+  <div class="toc" id="toc">
+    <p class="toc-lead"><b>Building something new?</b> Read <a href="#question">Rigid or bending</a> first, then follow a recipe. <b>Stuck on one node?</b> Type its name in the filter above.</p>
+    <div class="tocgrid">
+      <div class="tocgroup">
+        <p class="gn">Part 1</p><p class="gt">The idea</p>
+        <p class="gd">The one decision that shapes the whole tree.</p>
+        <ul><li><a href="#question">Rigid or bending</a></li><li><a href="#compare">Chain, sleepers, rails side by side</a></li><li><a href="#up">Which way is up</a></li></ul>
+      </div>
+      <div class="tocgroup">
+        <p class="gn">Part 2</p><p class="gt">The trees</p>
+        <p class="gd">Both trees drawn the way they look in Blender.</p>
+        <ul><li><a href="#chain-tree">The chain tree</a></li><li><a href="#track-tree">The track tree</a></li></ul>
+      </div>
+      <div class="tocgroup">
+        <p class="gn">Part 3</p><p class="gt">Build it yourself</p>
+        <p class="gd">In order, with a check after every step.</p>
+        <ul><li><a href="#build-chain">Build the chain</a></li><li><a href="#build-track">Build the track</a></li></ul>
+      </div>
+      <div class="tocgroup">
+        <p class="gn">Part 4</p><p class="gt">Look it up</p>
+        <p class="gd">Every node, every mistake, and the Unreal version.</p>
+        <ul><li><a href="#nodes">Node by node</a></li><li><a href="#gotchas">What went wrong, and the fix</a></li><li><a href="#unreal">Same idea in Unreal</a></li></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================= PART 1 -->
+  <div class="part" data-part="1"><p class="pn">Part 1</p><p class="pt">The idea</p><p class="pd">Decide this before adding a single node.</p></div>
+
+  <section id="question" data-sec data-part="1">
+    <div class="sec-head"><h2>Rigid or bending</h2>
+      <p class="sec-note">Ask what the part does on a turn. The answer picks the method, and the method is why the two trees look different.</p></div>
+    <div class="pair">
+      <article class="idea rigid">
+        <span class="tag">Rigid &rarr; copy it</span>
+        <h3>Place copies of the piece</h3>
+        <p>A chain link, a sleeper, a fence post: it keeps its shape. For every copy the tree only answers two questions — <b>where</b> does it go, and <b>which way</b> does it face. That is <code>Curve to Points</code> followed by <code>Instance on Points</code>.</p>
+        <p class="used">Used for: chain links, sleepers.</p>
+      </article>
+      <article class="idea bend">
+        <span class="tag">Bending &rarr; move its vertices</span>
+        <h3>Build it straight, then bend it</h3>
+        <p>A rail, a pipe, a cable: it must stay one unbroken piece through the turn. Copies of a straight piece cannot do that — on a 6 m test turn they left <b>84 cm of gaps</b> in the outer rail. So the tree builds a straight strip and moves <b>every vertex</b> onto the curve with <code>Set Position</code>.</p>
+        <p class="used">Used for: rails.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="compare" data-sec data-part="1">
+    <div class="sec-head"><h2>Chain, sleepers, rails side by side</h2>
+      <p class="sec-note">The sleeper branch is the chain method with a single piece. That is why one part of the track tree looks like the chain tree, and the rail part looks like nothing else.</p></div>
+    <div class="scroller">
+      <table class="compare">
+        <thead><tr><th></th><th>Chain links</th><th>Sleepers</th><th>Rails</th></tr></thead>
+        <tbody>
+          <tr><th>The piece</th><td class="rg">Rigid link, two kinds taking turns</td><td class="rg">Rigid sleeper with its plates and bolts</td><td class="bd">One straight rail piece, 42.29 cm long</td></tr>
+          <tr><th>What the tree moves</th><td class="rg">Whole copies</td><td class="rg">Whole copies</td><td class="bd">Every single vertex</td></tr>
+          <tr><th>Key node</th><td class="rg"><code>Instance on Points</code></td><td class="rg"><code>Instance on Points</code></td><td class="bd"><code>Set Position</code></td></tr>
+          <tr><th>How many</th><td class="rg">Count 170 — exact, and even so the two kinds alternate all the way round</td><td class="rg">Length 55 cm — a spacing</td><td class="bd">Floor(length &divide; 42.29 cm) — whole pieces only</td></tr>
+          <tr><th>Which way it faces</th><td class="rg">The curve's own rotation, plus a fixed <code>Rotate Rotation</code></td><td class="rg">Tangent + world up, with <code>Axes to Rotation</code></td><td class="bd">Tangent + world up, applied by <code>Rotate Vector</code></td></tr>
+          <tr><th>What comes out</th><td class="rg">Instances</td><td class="rg">Instances</td><td class="bd">A real mesh</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="up" data-sec data-part="1">
+    <div class="sec-head"><h2>Which way is up</h2>
+      <p class="sec-note">A copy needs a full orientation: the direction along the curve (the <b>tangent</b>) and a second direction that stops it rolling.</p></div>
+    <div class="prose">
+      <p><b>The chain loop stands upright.</b> The rotation that <code>Curve to Points</code> gives each point is steady around a loop in one plane, so the chain tree uses it directly. One fixed <code>Rotate Rotation</code> then turns the link model to lie along the chain. The angle depends on how the link was modelled and how the path sits — in your file it is Y 90°, Global.</p>
+      <p><b>The track lies on the ground.</b> There, "up" is simply +Z. The curve's own normal on RailPath does not point up — rails built with it landed 60 cm off the path — and on slopes it rolls a little as it follows the curve. So both track branches build their rotation from the tangent plus a fixed up of (0, 0, 1). Because sleepers and rails use the same rule, they stay lined up: the rails sit on the sleeper plates within 7 mm.</p>
+    </div>
+    <p class="rule"><b>Rule of thumb</b>A loop that stands up — chain, conveyor belt, tank track: use the curve's rotation. Anything lying on the ground — rails, road, fence: use the tangent plus world up.</p>
+  </section>
+
+  <!-- ======================================================= PART 2 -->
+  <div class="part" data-part="2"><p class="pn">Part 2</p><p class="pt">The trees</p><p class="pd">Drawn the way they look in Blender's node editor. Solid wires carry geometry or single values; dashed wires carry a field — a value for every point or vertex.</p></div>
+
+  <section id="chain-tree" data-sec data-part="2">
+    <div class="sec-head"><h2>The chain tree</h2>
+      <p class="sec-note">Geometry Nodes modifier on <code>ChainPath</code>. Eight nodes. Read it left to right.</p></div>
+    <div class="legend" aria-hidden="true">
+      <span><i style="background:#b04a68"></i>input</span><span><i style="background:#23957a"></i>geometry</span><span><i style="background:#2f7fa8"></i>converter</span><span><i style="background:#5959b8"></i>vector</span><span><i style="background:#6b6b6b"></i>group in / out</span>
+      <span><span class="ln"></span>geometry or value</span><span><span class="ln dash"></span>field</span>
+    </div>
+    <div class="graphbox">
+      <div class="graphscroll"><div class="graph" data-graph="chain" role="img" aria-label="Chain node tree: Group Input to Curve to Points, two Object Info nodes into Geometry to Instance, both into Instance on Points with Pick Instance, Curve to Points rotation through Rotate Rotation into Instance on Points, then Group Output."></div></div>
+    </div>
+    <ol class="readit">
+      <li><code>Group Input</code> hands over the curve itself — the modifier sits on ChainPath.</li>
+      <li><code>Curve to Points</code> puts 170 evenly spaced points around the loop. Each point carries a rotation that follows the curve.</li>
+      <li>Two <code>Object Info</code> nodes read the two link meshes. <code>Geometry to Instance</code> turns them into a list of two.</li>
+      <li><code>Instance on Points</code> with <b>Pick Instance</b> places link 1, link 2, link 1, link 2… on the points.</li>
+      <li><code>Rotate Rotation</code> adds a fixed 90° so each link lies along the chain instead of across it.</li>
+      <li><code>Group Output</code> shows the links instead of the curve line.</li>
+    </ol>
+  </section>
+
+  <section id="track-tree" data-sec data-part="2">
+    <div class="sec-head"><h2>The track tree</h2>
+      <p class="sec-note">Geometry Nodes modifier on <code>RailPath</code>. 22 nodes, easier to read as three groups — build and check them in this order. Grey dashed boxes stand for a node shown in another group.</p></div>
+
+    <div class="graphbox">
+      <div class="gh"><span class="step">Group 1</span><h3>Sleepers — the chain method with one piece</h3></div>
+      <div class="graphscroll"><div class="graph" data-graph="sleepers" role="img" aria-label="Sleeper branch: Group Input to Curve to Points in Length mode, Object Info of the sleeper into Instance on Points, Curve to Points tangent into Axes to Rotation into Instance on Points rotation, output to Join Geometry."></div></div>
+      <ol class="readit">
+        <li><code>Curve to Points</code> in Length mode gives a point about every 55 cm, plus the tangent there.</li>
+        <li><code>Axes to Rotation</code> makes a rotation whose X follows the tangent and whose Z points up.</li>
+        <li><code>Instance on Points</code> puts one sleeper on each point, turned that way.</li>
+      </ol>
+    </div>
+
+    <div class="graphbox">
+      <div class="gh"><span class="step">Group 2</span><h3>A straight rail strip</h3></div>
+      <div class="graphscroll"><div class="graph" data-graph="strip" role="img" aria-label="Rail strip: Curve Length divided by 0.4229 and floored gives the Count of a Mesh Line; Instance on Points places the rail piece from Object Info on the line; Realize Instances turns it into one mesh for Set Position."></div></div>
+      <ol class="readit">
+        <li><code>Curve Length</code> &divide; 0.4229, then <code>Floor</code> = how many whole rail pieces fit. 47 on your 19.9 m path.</li>
+        <li><code>Mesh Line</code> makes that many points in a straight line along X, one rail piece apart.</li>
+        <li><code>Instance on Points</code> puts a rail piece on each; <code>Realize Instances</code> turns them into one real mesh so its vertices can be moved.</li>
+      </ol>
+    </div>
+
+    <div class="graphbox">
+      <div class="gh"><span class="step">Group 3</span><h3>Bend the strip onto the curve</h3></div>
+      <div class="graphscroll"><div class="graph" data-graph="bend" role="img" aria-label="Bend: Position into Separate XYZ; X into Sample Curve length; Y and Z into Combine XYZ, turned by Rotate Vector using Axes to Rotation from the sampled tangent; Vector Math adds the sampled position; result into Set Position; Join Geometry with the sleepers into Group Output."></div></div>
+      <ol class="readit">
+        <li>For every vertex of the straight strip, <b>X</b> is how far along the track it is; <b>Y</b> and <b>Z</b> are how far to the side and how high.</li>
+        <li><code>Sample Curve</code> turns X into a point on the curve and the direction there.</li>
+        <li><code>Combine XYZ</code> rebuilds the side-and-height offset (0, Y, Z); <code>Axes to Rotation</code> and <code>Rotate Vector</code> turn that offset to face along the track.</li>
+        <li><code>Vector Math</code> adds the point and the turned offset. <code>Set Position</code> moves the vertex there.</li>
+        <li><code>Join Geometry</code> adds the sleepers from group 1, and <code>Group Output</code> shows both.</li>
+      </ol>
+    </div>
+    <p class="scrollhint">Wide trees scroll sideways inside their box.</p>
+  </section>
+
+  <!-- ======================================================= PART 3 -->
+  <div class="part" data-part="3"><p class="pn">Part 3</p><p class="pt">Build it yourself</p><p class="pd">Add nodes with Shift+A and type the name. Drag from an output dot to an input dot to wire them. Check the result after every step before moving on.</p></div>
+
+  <section id="build-chain" data-sec data-part="3">
+    <div class="sec-head"><h2>Build the chain</h2>
+      <p class="sec-note">Two link types alternating around a closed curve, pins sitting in the holes.</p></div>
+    <div class="recipe">
+      <article class="card">
+        <p class="kicker">Before the nodes</p>
+        <h3>Get the pieces ready</h3>
+        <ul class="plain">
+          <li>Each link object has its origin in the middle of the link: <b>Object &rarr; Set Origin &rarr; Origin to Geometry</b>.</li>
+          <li>Delete any Array or Curve modifier on the links — even a disabled one that points at the path makes a dependency loop.</li>
+          <li>Hide the link objects (H). The tree still reads them.</li>
+          <li>On the path: <b>Object Data &rarr; Shape &rarr; Resolution Preview U 32</b>. At 12 the pins missed the holes by up to 1.7 mm.</li>
+        </ul>
+      </article>
+      <article class="card">
+        <p class="kicker">Nodes</p>
+        <h3>Wire it up</h3>
+        <ol class="steps">
+          <li>Select the path &rarr; Modifiers &rarr; Add Modifier &rarr; <b>Geometry Nodes</b> &rarr; New.</li>
+          <li><code>Curve to Points</code>: Group Input Geometry &rarr; Curve. Mode <b>Count</b>. Count = path length &divide; pin spacing, rounded to an <b>even</b> number (2430 mm &divide; 14.37 mm &rarr; 170).</li>
+          <li>Two <code>Object Info</code> nodes, one per link &rarr; both into one <code>Geometry to Instance</code>.</li>
+          <li><code>Instance on Points</code>: Points &larr; Curve to Points; Instance &larr; Geometry to Instance; tick <b>Pick Instance</b>.</li>
+          <li><code>Rotate Rotation</code>: Curve to Points Rotation &rarr; Rotation; Rotate By 90° on one axis &rarr; Instance on Points Rotation. Try X, Y and Z until the links stand like a chain.</li>
+          <li>Instance on Points &rarr; <code>Group Output</code>.</li>
+        </ol>
+        <p class="check"><b>Check</b>Links alternate, and on the sprockets the pins still sit in the holes.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="build-track" data-sec data-part="3">
+    <div class="sec-head"><h2>Build the track</h2>
+      <p class="sec-note">Sleepers placed, rails bent — in one tree on the path. Each group ends with something you can see, so a mistake shows up right away.</p></div>
+    <div class="recipe">
+      <article class="card">
+        <p class="kicker">Before the nodes</p>
+        <h3>Get the pieces ready</h3>
+        <ul class="plain">
+          <li>Split the track tile into two objects: the <b>rail</b> (with loop cuts along it, so it has vertices to bend) and the <b>sleeper</b> with its plates and bolts. Keep only Mirror on them, and hide both.</li>
+          <li>Model both with the track running along <b>X</b>, Y sideways and Z up. Centre the sleeper on its origin.</li>
+          <li><b>Units:</b> this file measures length in centimetres. In a length field type <code>42.29</code>, not <code>0.4229</code>. Math nodes have no units.</li>
+        </ul>
+      </article>
+      <article class="card">
+        <p class="kicker">Group 1</p>
+        <h3>Sleepers</h3>
+        <ol class="steps">
+          <li>Group Input Geometry &rarr; <code>Curve to Points</code>. Mode <b>Length</b>, Length <b>55 cm</b>.</li>
+          <li><code>Object Info</code> (the sleeper) &rarr; Instance of an <code>Instance on Points</code>; Points &larr; Curve to Points.</li>
+          <li><code>Axes to Rotation</code>, set to Primary <b>X</b>, Secondary <b>Z</b>: Tangent &rarr; Primary Axis; type <b>0, 0, 1</b> in Secondary Axis; Rotation &rarr; Instance on Points Rotation.</li>
+          <li>Instance on Points &rarr; Group Output (for now).</li>
+        </ol>
+        <p class="check"><b>Check</b>Sleepers along the path, square to it.</p>
+      </article>
+      <article class="card">
+        <p class="kicker">Group 2</p>
+        <h3>A straight rail strip</h3>
+        <ol class="steps">
+          <li><code>Curve Length</code> (Curve &larr; Group Input) &rarr; <code>Math</code> Divide by <b>0.4229</b> &rarr; <code>Math</code> Floor &rarr; Count of a <code>Mesh Line</code>.</li>
+          <li>Mesh Line: mode <b>Offset</b>, Start Location X <b>21</b> cm, Offset X <b>42.29</b> cm.</li>
+          <li>Mesh Line &rarr; Points of a second <code>Instance on Points</code>; Instance &larr; <code>Object Info</code> (the rail) &rarr; <code>Realize Instances</code> &rarr; <code>Set Position</code>.</li>
+          <li><code>Join Geometry</code> with Set Position and the sleepers' Instance on Points &rarr; Group Output.</li>
+        </ol>
+        <p class="check"><b>Check</b>Sleepers on the path, and the rails in one straight line along X.</p>
+      </article>
+      <article class="card">
+        <p class="kicker">Group 3</p>
+        <h3>Bend the strip</h3>
+        <ol class="steps">
+          <li><code>Position</code> &rarr; <code>Separate XYZ</code>.</li>
+          <li><code>Sample Curve</code>, Mode <b>Length</b>: Curves &larr; Group Input; Length &larr; Separate <b>X</b>.</li>
+          <li><code>Combine XYZ</code>: Y &larr; Separate Y, Z &larr; Separate Z. X stays 0.</li>
+          <li><code>Vector Math</code> (Add): Sample Curve Position + Combine XYZ &rarr; Set Position <b>Position</b>.</li>
+        </ol>
+        <p class="check"><b>Check</b>The rails follow the path but squeeze together on the turn. That is expected.</p>
+        <ol class="steps" start="5">
+          <li><code>Rotate Vector</code> between Combine XYZ and Vector Math.</li>
+          <li>A second <code>Axes to Rotation</code> (X / Z, Secondary 0, 0, 1): Sample Curve Tangent &rarr; Primary; Rotation &rarr; Rotate Vector Rotation.</li>
+        </ol>
+        <p class="check"><b>Check</b>The rails stay parallel — 1.50 m apart along the whole path.</p>
+      </article>
+    </div>
+    <p class="note">Why the line starts at 21 cm: the rail mesh reaches 20.5 cm behind its origin. Starting at 0 would put that part before the start of the curve, where <code>Sample Curve</code> piles every vertex onto the first point.</p>
+  </section>
+
+  <!-- ======================================================= PART 4 -->
+  <div class="part" data-part="4"><p class="pn">Part 4</p><p class="pt">Look it up</p><p class="pd">Every node in both trees, the mistakes met while building them, and how the same idea is built in Unreal.</p></div>
+
+  <section id="nodes" data-sec data-part="4">
+    <div class="sec-head"><h2>Node by node</h2>
+      <p class="sec-note">In the order you meet them. The tags show which part uses each node.</p></div>
+    <div class="nodes">
+
+      <article class="nd" id="n-group-input" data-row>
+        <div class="nh"><span class="sw c-group"></span><h3>Group Input</h3><span class="cat">Group</span><span class="uses"><span>chain</span><span>track</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>Hands over the geometry of the object the modifier sits on — here, the curve itself.</dd>
+          <dt>Why here</dt><dd>Everything starts from the path: points along it, its length, positions on it.</dd>
+          <dt>Use it when</dt><dd>Always. One output can feed as many inputs as need the curve.</dd>
+          <dt>In your file</dt><dd>ChainPath: into Curve to Points. RailPath: into Curve to Points, Curve Length, and Sample Curve through a Reroute.</dd>
+          <dt>Watch out</dt><dd class="warn">If the modifier's monitor icon is off, nothing from the tree shows in the viewport.</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-object-info" data-row>
+        <div class="nh"><span class="sw c-input"></span><h3>Object Info</h3><span class="cat">Input</span><span class="uses"><span>chain</span><span>sleepers</span><span>rails</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>Reads another object's geometry, with its modifiers, into this tree.</dd>
+          <dt>Why here</dt><dd>The links, the sleeper and the rail piece are ordinary objects you model and edit; the tree borrows them.</dd>
+          <dt>Use it when</dt><dd>You want to place or bend a mesh that lives in its own object.</dd>
+          <dt>In your file</dt><dd>Original. ChainLink1, ChainLink2, SM_Reils_Rail, SM_Reils_Sleeper (As Instance on — it works either way here).</dd>
+          <dt>Watch out</dt><dd class="warn"><b>Original</b> uses the mesh around its own origin, wherever the object sits — so the origin must be in the right place. A link whose origin was 3.4 m away flew off the chain. Modifiers on the source still count: an Array or Curve modifier pointing at the same path makes a dependency loop, even when disabled.</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-curve-to-points" data-row>
+        <div class="nh"><span class="sw c-geo"></span><h3>Curve to Points</h3><span class="cat">Geometry &middot; curve</span><span class="uses"><span>chain</span><span>sleepers</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>Puts points along a curve. Each point also carries the curve's Tangent, Normal and a ready-made Rotation.</dd>
+          <dt>Why here</dt><dd>The points are the spots where copies go.</dd>
+          <dt>Use it when</dt><dd>Copies spaced along a path. <b>Count</b> for an exact number, <b>Length</b> for a spacing.</dd>
+          <dt>In your file</dt><dd>Chain: Count 170. Sleepers: Length 55 cm.</dd>
+          <dt>Watch out</dt><dd class="warn">On a closed loop, Count spreads the points evenly with no double point at the join — make it even when two pieces alternate. Length puts a point at both ends and evens out the rest, so 55 cm became about 54 cm on your 19.9 m path.</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-geometry-to-instance" data-row>
+        <div class="nh"><span class="sw c-geo"></span><h3>Geometry to Instance</h3><span class="cat">Geometry &middot; instances</span><span class="uses"><span>chain</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>Turns each geometry wired into it into one instance of a list, in the order of the wires.</dd>
+          <dt>Why here</dt><dd>Pick Instance needs a list to pick from: link 1 and link 2.</dd>
+          <dt>Use it when</dt><dd>Two or more different pieces take turns, or you pick one at random.</dd>
+          <dt>In your file</dt><dd>Two wires: ChainLink1 and ChainLink2.</dd>
+          <dt>Watch out</dt><dd class="warn">Without Pick Instance ticked, Instance on Points places the whole list on every point.</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-instance-on-points" data-row>
+        <div class="nh"><span class="sw c-geo"></span><h3>Instance on Points</h3><span class="cat">Geometry &middot; instances</span><span class="uses"><span>chain</span><span>sleepers</span><span>rails</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>Puts a copy of the Instance geometry on every point, turned by Rotation and sized by Scale.</dd>
+          <dt>Why here</dt><dd>Chain links and sleepers are rigid copies. In the rail branch it lines the rail pieces up before they are bent.</dd>
+          <dt>Use it when</dt><dd>Many copies of the same rigid thing. Copies are light: they all share one mesh.</dd>
+          <dt>In your file</dt><dd>Chain: Pick Instance on. Sleepers: Rotation from Axes to Rotation. Rails: no rotation, the strip is straight along X.</dd>
+          <dt>Watch out</dt><dd class="warn">Copies never bend. Pick Instance chooses by the point's index and wraps round: 2 pieces on 170 points gives 1, 2, 1, 2…</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-rotate-rotation" data-row>
+        <div class="nh"><span class="sw c-conv"></span><h3>Rotate Rotation</h3><span class="cat">Converter &middot; rotation</span><span class="uses"><span>chain</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>Adds a fixed turn to a rotation. <b>Global</b> turns around the object's axes; <b>Local</b> around the copy's own axes.</dd>
+          <dt>Why here</dt><dd>The rotation from Curve to Points does not match the way the link was modelled, by a fixed 90°.</dd>
+          <dt>Use it when</dt><dd>You use the curve's rotation and the model faces wrong by the same amount everywhere.</dd>
+          <dt>In your file</dt><dd>Global, Y 90°.</dd>
+          <dt>Watch out</dt><dd class="warn">The right axis depends on the model and on how the path sits. After you rotate the path it can change — try 90° on X, Y and Z and look.</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-axes-to-rotation" data-row>
+        <div class="nh"><span class="sw c-conv"></span><h3>Axes to Rotation</h3><span class="cat">Converter &middot; rotation</span><span class="uses"><span>sleepers</span><span>rails</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>Builds a rotation from two directions. The primary axis follows its direction exactly; the secondary stays as close to its direction as it can while staying at a right angle to the first.</dd>
+          <dt>Why here</dt><dd>"X along the track, Z up" is exactly how sleepers and rails should face.</dd>
+          <dt>Use it when</dt><dd>You know a direction along something (a tangent) and roughly where up is.</dd>
+          <dt>In your file</dt><dd>Primary Axis X &larr; Tangent; Secondary Axis Z = (0, 0, 1). One for the sleepers, one for the rail bend.</dd>
+          <dt>Watch out</dt><dd class="warn">It starts as Primary Z / Secondary X — change both dropdowns. The curve's Normal as "up" put the rails 60 cm off.</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-curve-length" data-row>
+        <div class="nh"><span class="sw c-geo"></span><h3>Curve Length</h3><span class="cat">Geometry &middot; curve</span><span class="uses"><span>rails</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>The total length of the curve, as one number.</dd>
+          <dt>Why here</dt><dd>To work out how many rail pieces fit.</dd>
+          <dt>In your file</dt><dd>Curve &larr; Group Input: 19.9 m.</dd>
+          <dt>Watch out</dt><dd class="warn">The number is in metres even when your fields show centimetres, so the divide after it uses 0.4229.</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-math" data-row>
+        <div class="nh"><span class="sw c-conv"></span><h3>Math</h3><span class="cat">Converter</span><span class="uses"><span>rails</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>Arithmetic on single numbers — here Divide, then Floor.</dd>
+          <dt>Why here</dt><dd>Length &divide; piece length = how many pieces. Floor drops the fraction, so only whole pieces are made and the strip never runs past the end of the curve.</dd>
+          <dt>Use it when</dt><dd>Any count, ratio or rounding.</dd>
+          <dt>In your file</dt><dd>Divide by 0.4229, Floor &rarr; 47.</dd>
+          <dt>Watch out</dt><dd class="warn">Math fields have no units: 0.4229 here, but 42.29 in a centimetre field.</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-mesh-line" data-row>
+        <div class="nh"><span class="sw c-geo"></span><h3>Mesh Line</h3><span class="cat">Geometry &middot; mesh</span><span class="uses"><span>rails</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>A row of points: Count of them, starting at Start Location, each Offset from the last.</dd>
+          <dt>Why here</dt><dd>It is the straight "array" the rail pieces sit on, one piece length apart.</dd>
+          <dt>Use it when</dt><dd>You need evenly spaced points on a straight line.</dd>
+          <dt>In your file</dt><dd>Offset mode. Start Location X 21 cm, Offset X 42.29 cm, Count from Floor.</dd>
+          <dt>Watch out</dt><dd class="warn">Typing 0.4229 into the centimetre field made 0.42 cm and stacked all 47 pieces in one spot.</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-realize-instances" data-row>
+        <div class="nh"><span class="sw c-geo"></span><h3>Realize Instances</h3><span class="cat">Geometry &middot; instances</span><span class="uses"><span>rails</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>Turns instances into real geometry.</dd>
+          <dt>Why here</dt><dd>Set Position must move each vertex of the rail. On instances it would only move whole copies.</dd>
+          <dt>Use it when</dt><dd>Before changing the vertices of something that was instanced.</dd>
+          <dt>Watch out</dt><dd class="warn">Real geometry is heavier than instances. Realize only what has to bend — the sleepers stay instances.</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-position" data-row>
+        <div class="nh"><span class="sw c-input"></span><h3>Position</h3><span class="cat">Input &middot; attribute</span><span class="uses"><span>rails</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>The position of each element being worked on — here every vertex of the rail strip. It is a <b>field</b>: a different value for every vertex.</dd>
+          <dt>Why here</dt><dd>A vertex's place in the straight strip says where it belongs on the curve.</dd>
+          <dt>Watch out</dt><dd class="warn">Field wires are drawn dashed. That is normal, not an error.</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-separate-xyz" data-row>
+        <div class="nh"><span class="sw c-conv"></span><h3>Separate XYZ</h3><span class="cat">Converter &middot; vector</span><span class="uses"><span>rails</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>Splits a vector into its X, Y and Z numbers.</dd>
+          <dt>Why here</dt><dd>X means distance along the track; Y and Z mean sideways and height. They are used differently.</dd>
+          <dt>Watch out</dt><dd class="warn">Wire <b>X</b> into Sample Curve Length. Y there sends every vertex to the wrong spot.</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-sample-curve" data-row>
+        <div class="nh"><span class="sw c-geo"></span><h3>Sample Curve</h3><span class="cat">Geometry &middot; curve</span><span class="uses"><span>rails</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>Reads the curve at a distance (<b>Length</b> mode) or a fraction (<b>Factor</b> mode) and gives the Position, Tangent and Normal there.</dd>
+          <dt>Why here</dt><dd>Turns each vertex's X into its point and direction on the path.</dd>
+          <dt>Use it when</dt><dd>You need "the point this far along the curve".</dd>
+          <dt>In your file</dt><dd>Length mode. Curves &larr; Group Input, Length &larr; Separate XYZ X.</dd>
+          <dt>Watch out</dt><dd class="warn">A length before the start or past the end sticks to the first or last point — checked: −1 m lands exactly on the start. That squashes geometry, which is why the strip uses whole pieces and starts at 21 cm.</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-combine-xyz" data-row>
+        <div class="nh"><span class="sw c-conv"></span><h3>Combine XYZ</h3><span class="cat">Converter &middot; vector</span><span class="uses"><span>rails</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>Builds a vector from three numbers.</dd>
+          <dt>Why here</dt><dd>Rebuilds the side-and-height offset (0, Y, Z).</dd>
+          <dt>Watch out</dt><dd class="warn">X stays 0 — it was already used as the distance along the curve. Adding it again would push the rail forward.</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-rotate-vector" data-row>
+        <div class="nh"><span class="sw c-conv"></span><h3>Rotate Vector</h3><span class="cat">Converter &middot; rotation</span><span class="uses"><span>rails</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>Turns a vector by a rotation.</dd>
+          <dt>Why here</dt><dd>The offset (0, Y, Z) points along world axes. On a turn it has to turn with the track, or the two rails squeeze together — they came within 6 cm.</dd>
+          <dt>In your file</dt><dd>Vector &larr; Combine XYZ, Rotation &larr; the rail's Axes to Rotation.</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-vector-math" data-row>
+        <div class="nh"><span class="sw c-vec"></span><h3>Vector Math</h3><span class="cat">Vector</span><span class="uses"><span>rails</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>Maths on vectors. Add is the default.</dd>
+          <dt>Why here</dt><dd>New position = point on the curve + turned offset.</dd>
+          <dt>In your file</dt><dd>Add: Sample Curve Position + Rotate Vector.</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-set-position" data-row>
+        <div class="nh"><span class="sw c-geo"></span><h3>Set Position</h3><span class="cat">Geometry</span><span class="uses"><span>rails</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>Moves points or vertices. <b>Position</b> replaces each one; <b>Offset</b> adds to it.</dd>
+          <dt>Why here</dt><dd>This is the bend itself: every vertex of the straight strip goes to its place on the curve.</dd>
+          <dt>Use it when</dt><dd>You deform geometry with a formula.</dd>
+          <dt>In your file</dt><dd>Geometry &larr; Realize Instances, Position &larr; Vector Math.</dd>
+          <dt>Watch out</dt><dd class="warn">Use Position, not Offset: the value is already the full new position.</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-join-geometry" data-row>
+        <div class="nh"><span class="sw c-geo"></span><h3>Join Geometry</h3><span class="cat">Geometry</span><span class="uses"><span>track</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>Combines several geometries into one.</dd>
+          <dt>Why here</dt><dd>Group Output takes one geometry, and the track is rails plus sleepers.</dd>
+          <dt>Watch out</dt><dd class="warn">Each part stays as it was: the sleepers stay instances, the rails stay a mesh.</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-group-output" data-row>
+        <div class="nh"><span class="sw c-group"></span><h3>Group Output</h3><span class="cat">Group</span><span class="uses"><span>chain</span><span>track</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>Whatever reaches it replaces the object's own geometry in the viewport and the render.</dd>
+          <dt>Why here</dt><dd>The chain or the track should show, not the curve line.</dd>
+          <dt>Watch out</dt><dd class="warn">A branch that is not wired through to it shows nothing, however correct it is.</dd>
+        </dl>
+      </article>
+
+      <article class="nd" id="n-reroute" data-row>
+        <div class="nh"><span class="sw c-group"></span><h3>Reroute</h3><span class="cat">Layout</span><span class="uses"><span>track</span></span></div>
+        <dl>
+          <dt>What it does</dt><dd>A dot on a wire that only tidies the layout. It changes nothing.</dd>
+          <dt>In your file</dt><dd>Between Group Input and Sample Curve's Curves.</dd>
+        </dl>
+      </article>
+    </div>
+  </section>
+
+  <section id="gotchas" data-sec data-part="4">
+    <div class="sec-head"><h2>What went wrong, and the fix</h2>
+      <p class="sec-note">Every one of these happened while building the chain and the track. The symptom is what you see first.</p></div>
+    <div class="scroller">
+      <table class="gotchas">
+        <thead><tr><th>What you see</th><th>Why</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr data-row><td>Nothing from the tree appears</td><td>The modifier's monitor icon was switched off.</td><td>Turn the monitor icon on in the modifier header.</td></tr>
+          <tr data-row><td>All rail pieces stacked in one spot</td><td><code>0.4229</code> typed into a centimetre field became 0.42 cm.</td><td>Type <code>42.29</code> in length fields. Math nodes have no units.</td></tr>
+          <tr data-row><td>Chain links flew 3.4 m away</td><td>The link object's origin was at the world centre while its mesh sat on the draisine.</td><td>Object &rarr; Set Origin &rarr; Origin to Geometry on the links.</td></tr>
+          <tr data-row><td>Two link types sit on top of each other</td><td>Both were placed on the same points.</td><td>One list with Geometry to Instance, Pick Instance on, an even Count.</td></tr>
+          <tr data-row><td>Pins miss the holes on the sprocket, up to 4.4 mm</td><td>One link type was shifted half a step along a straight line, not along the curve.</td><td>Give every link its own point on the curve.</td></tr>
+          <tr data-row><td>Rails leave gaps on a turn — 84 cm on a 6 m turn</td><td>Rigid copies cannot bend.</td><td>Build a straight strip and bend it with Set Position.</td></tr>
+          <tr data-row><td>Rails squeeze together on the turn</td><td>The side offset still pointed along world axes.</td><td>Rotate Vector, with Axes to Rotation from the sampled tangent.</td></tr>
+          <tr data-row><td>Rails 60 cm off the path</td><td>The curve's Normal was used as "up", and on RailPath it does not point up.</td><td>Secondary Axis (0, 0, 1) in Axes to Rotation.</td></tr>
+          <tr data-row><td>Links missing, "dependency cycle" warning</td><td>The link objects still had Array and Curve modifiers pointing at the path — disabled ones count too.</td><td>Delete those modifiers from the source objects.</td></tr>
+          <tr data-row><td>Wire in the wrong socket (Y into Length)</td><td>Dragged from the wrong output dot.</td><td>Drag from X onto Length. An input that takes one wire replaces the old one.</td></tr>
+          <tr data-row><td>Pins off by up to 1.7 mm</td><td>Curve Resolution 12 is coarse for 14 mm links.</td><td>Resolution Preview U 32 on the path.</td></tr>
+          <tr data-row><td>Track stretched up to 2.4&times; on turns (Curve modifier)</td><td>The mesh object sat 7 m away from the path's origin, so it bent around a wider circle.</td><td>Same Location and Rotation for both — or build it with nodes as here.</td></tr>
+          <tr data-row><td>Sleepers wedge-shaped on turns (Curve modifier)</td><td>The modifier bends every vertex, sleepers included.</td><td>Place sleepers as instances instead.</td></tr>
+          <tr data-row><td>No "Fit Curve" option on the Array modifier</td><td>In Blender 5.2, Add Modifier &rarr; Array is the node version; the old one is "Array (Legacy)".</td><td>Use Array (Legacy) for Fit Curve, or nodes.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="unreal" data-sec data-part="4">
+    <div class="sec-head"><h2>Same idea in Unreal</h2>
+      <p class="sec-note">The rigid-or-bending question carries over unchanged. Only the names differ.</p></div>
+    <div class="scroller">
+      <table class="gotchas">
+        <thead><tr><th>In Blender</th><th>In Unreal</th><th>How</th></tr></thead>
+        <tbody>
+          <tr data-row><td>The curve (ChainPath, RailPath)</td><td>Spline Component</td><td>You shape it in the level viewport.</td></tr>
+          <tr data-row><td>Curve to Points + Instance on Points</td><td>Instanced Static Mesh Component</td><td><code>AddInstance(GetTransformAtDistanceAlongSpline(i &times; spacing))</code> — the transform's X follows the spline, Z points up.</td></tr>
+          <tr data-row><td>Bending with Set Position</td><td>One Spline Mesh Component per rail piece</td><td><code>SetStartAndEnd</code> with the location and tangent at <code>i &times; step</code> and <code>(i + 1) &times; step</code>; tangents normalised, then times <code>step</code>.</td></tr>
+          <tr data-row><td>The modifier updates live</td><td><code>OnConstruction</code></td><td>Runs again when you edit the spline in the editor, so the track rebuilds by itself.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Function names checked in the Unreal Engine 5.8 source. The Unreal version of the track has not been built yet.</p>
+  </section>
+
+  <section data-sec data-part="4">
+    <p class="note">Every number on this page was measured in Blender 5.2 on copies of the project file — the gaps, the offsets, the node defaults — not estimated.</p>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------- node graphs ----------------
+     Each node: [id, title, colour class, x, y, width, rows].
+     Row kinds: o = output socket, i = input socket, p = setting shown as a pill.
+     Socket types: geo, float, int, vec, rot, bool, obj.
+     A link is [from "node:Socket", to "node:Socket", dashed?]. A second socket
+     with the same name on one node is written "Vector#2". */
+
+  var GRAPHS = {
+    chain: {
+      w: 1080, h: 400,
+      nodes: [
+        ["gi", "Group Input", "group", 16, 26, 130, [["o", "Geometry", "geo"]]],
+        ["oi1", "Object Info", "input", 16, 118, 180, [["o", "Geometry", "geo"], ["p", "Original", "Relative"], ["i", "Object", "obj", "ChainLink1"], ["i", "As Instance", "bool"]]],
+        ["oi2", "Object Info", "input", 16, 262, 180, [["o", "Geometry", "geo"], ["p", "Original", "Relative"], ["i", "Object", "obj", "ChainLink2"], ["i", "As Instance", "bool"]]],
+        ["c2p", "Curve to Points", "geo", 236, 16, 170, [["o", "Points", "geo"], ["o", "Tangent", "vec"], ["o", "Normal", "vec"], ["o", "Rotation", "rot"], ["p", "Count"], ["i", "Curve", "geo"], ["i", "Count", "int", "170"]]],
+        ["g2i", "Geometry to Instance", "geo", 236, 272, 170, [["o", "Instances", "geo"], ["i", "Geometry", "geo"]]],
+        ["rr", "Rotate Rotation", "conv", 456, 150, 180, [["o", "Rotation", "rot"], ["p", "Global", "Local"], ["i", "Rotation", "rot"], ["i", "Rotate By", "rot", "Y 90°"]]],
+        ["iop", "Instance on Points", "geo", 690, 26, 190, [["o", "Instances", "geo"], ["i", "Points", "geo"], ["i", "Selection", "bool", "✓"], ["i", "Instance", "geo"], ["i", "Pick Instance", "bool", "✓"], ["i", "Instance Index", "int"], ["i", "Rotation", "rot"], ["i", "Scale", "vec", "1"]]],
+        ["go", "Group Output", "group", 930, 40, 130, [["i", "Geometry", "geo"]]]
+      ],
+      links: [
+        ["gi:Geometry", "c2p:Curve"], ["c2p:Points", "iop:Points"],
+        ["oi1:Geometry", "g2i:Geometry"], ["oi2:Geometry", "g2i:Geometry"],
+        ["g2i:Instances", "iop:Instance"],
+        ["c2p:Rotation", "rr:Rotation", true], ["rr:Rotation", "iop:Rotation", true],
+        ["iop:Instances", "go:Geometry"]
+      ]
+    },
+
+    sleepers: {
+      w: 1080, h: 380,
+      nodes: [
+        ["oi", "Object Info", "input", 236, 14, 190, [["o", "Geometry", "geo"], ["p", "Original", "Relative"], ["i", "Object", "obj", "SM_Reils_Sleeper"], ["i", "As Instance", "bool", "✓"]]],
+        ["gi", "Group Input", "group", 16, 196, 130, [["o", "Geometry", "geo"]]],
+        ["c2p", "Curve to Points", "geo", 236, 168, 170, [["o", "Points", "geo"], ["o", "Tangent", "vec"], ["o", "Normal", "vec"], ["o", "Rotation", "rot"], ["p", "Length"], ["i", "Curve", "geo"], ["i", "Length", "float", "55 cm"]]],
+        ["a2r", "Axes to Rotation", "conv", 460, 240, 190, [["o", "Rotation", "rot"], ["p", "Primary X · Secondary Z"], ["i", "Primary Axis", "vec"], ["i", "Secondary Axis", "vec", "0, 0, 1"]]],
+        ["iop", "Instance on Points", "geo", 700, 40, 190, [["o", "Instances", "geo"], ["i", "Points", "geo"], ["i", "Selection", "bool", "✓"], ["i", "Instance", "geo"], ["i", "Pick Instance", "bool"], ["i", "Instance Index", "int"], ["i", "Rotation", "rot"], ["i", "Scale", "vec", "1"]]],
+        ["join", "Join Geometry · group 3", "stub", 930, 60, 140, [["i", "Geometry", "geo"]]]
+      ],
+      links: [
+        ["gi:Geometry", "c2p:Curve"], ["c2p:Points", "iop:Points"], ["oi:Geometry", "iop:Instance"],
+        ["c2p:Tangent", "a2r:Primary Axis", true], ["a2r:Rotation", "iop:Rotation", true],
+        ["iop:Instances", "join:Geometry"]
+      ]
+    },
+
+    strip: {
+      w: 1340, h: 340,
+      nodes: [
+        ["gi", "Group Input", "group", 16, 40, 130, [["o", "Geometry", "geo"]]],
+        ["clen", "Curve Length", "geo", 176, 40, 140, [["o", "Length", "float"], ["i", "Curve", "geo"]]],
+        ["div", "Math", "conv", 346, 30, 150, [["o", "Value", "float"], ["p", "Divide"], ["i", "Value", "float"], ["i", "Value#2", "float", "0.4229"]]],
+        ["flo", "Math", "conv", 526, 30, 140, [["o", "Value", "float"], ["p", "Floor"], ["i", "Value", "float"]]],
+        ["ml", "Mesh Line", "geo", 696, 20, 190, [["o", "Mesh", "geo"], ["p", "Offset", "End Points"], ["i", "Count", "int"], ["i", "Start Location", "vec", "21 cm, 0, 0"], ["i", "Offset", "vec", "42.29 cm, 0, 0"]]],
+        ["oi", "Object Info", "input", 696, 196, 190, [["o", "Geometry", "geo"], ["p", "Original", "Relative"], ["i", "Object", "obj", "SM_Reils_Rail"], ["i", "As Instance", "bool"]]],
+        ["iop", "Instance on Points", "geo", 916, 20, 180, [["o", "Instances", "geo"], ["i", "Points", "geo"], ["i", "Selection", "bool", "✓"], ["i", "Instance", "geo"], ["i", "Pick Instance", "bool"], ["i", "Instance Index", "int"], ["i", "Rotation", "rot"], ["i", "Scale", "vec", "1"]]],
+        ["real", "Realize Instances", "geo", 1126, 30, 170, [["o", "Geometry", "geo"], ["i", "Geometry", "geo"], ["i", "Selection", "bool", "✓"], ["i", "Realize All", "bool", "✓"]]],
+        ["setp", "Set Position · group 3", "stub", 1126, 200, 170, [["i", "Geometry", "geo"]]]
+      ],
+      links: [
+        ["gi:Geometry", "clen:Curve"], ["clen:Length", "div:Value"], ["div:Value", "flo:Value"],
+        ["flo:Value", "ml:Count"], ["ml:Mesh", "iop:Points"], ["oi:Geometry", "iop:Instance"],
+        ["iop:Instances", "real:Geometry"], ["real:Geometry", "setp:Geometry"]
+      ]
+    },
+
+    bend: {
+      w: 1586, h: 470,
+      nodes: [
+        ["gi", "Group Input", "group", 16, 40, 120, [["o", "Geometry", "geo"]]],
+        ["pos", "Position", "input", 16, 350, 120, [["o", "Position", "vec"]]],
+        ["sep", "Separate XYZ", "conv", 168, 310, 130, [["o", "X", "float"], ["o", "Y", "float"], ["o", "Z", "float"], ["i", "Vector", "vec"]]],
+        ["sc", "Sample Curve", "geo", 330, 20, 170, [["o", "Value", "float"], ["o", "Position", "vec"], ["o", "Tangent", "vec"], ["o", "Normal", "vec"], ["p", "Factor", "Length", 1], ["i", "Curves", "geo"], ["i", "Length", "float"], ["i", "Curve Index", "int", "0"]]],
+        ["cmb", "Combine XYZ", "conv", 330, 320, 150, [["o", "Vector", "vec"], ["i", "X", "float", "0"], ["i", "Y", "float"], ["i", "Z", "float"]]],
+        ["a2r", "Axes to Rotation", "conv", 532, 170, 180, [["o", "Rotation", "rot"], ["p", "Primary X · Secondary Z"], ["i", "Primary Axis", "vec"], ["i", "Secondary Axis", "vec", "0, 0, 1"]]],
+        ["rv", "Rotate Vector", "conv", 744, 330, 140, [["o", "Vector", "vec"], ["i", "Vector", "vec"], ["i", "Rotation", "rot"]]],
+        ["vm", "Vector Math", "vec", 916, 60, 150, [["o", "Vector", "vec"], ["p", "Add"], ["i", "Vector", "vec"], ["i", "Vector#2", "vec"]]],
+        ["real", "Realize Instances · group 2", "stub", 916, 330, 180, [["o", "Geometry", "geo"]]],
+        ["setp", "Set Position", "geo", 1128, 40, 150, [["o", "Geometry", "geo"], ["i", "Geometry", "geo"], ["i", "Selection", "bool", "✓"], ["i", "Position", "vec"], ["i", "Offset", "vec", "0"]]],
+        ["sl", "Sleepers · group 1", "stub", 1128, 330, 150, [["o", "Instances", "geo"]]],
+        ["join", "Join Geometry", "geo", 1310, 150, 130, [["o", "Geometry", "geo"], ["i", "Geometry", "geo"]]],
+        ["go", "Group Output", "group", 1466, 160, 104, [["i", "Geometry", "geo"]]]
+      ],
+      links: [
+        ["pos:Position", "sep:Vector", true],
+        ["sep:X", "sc:Length", true], ["sep:Y", "cmb:Y", true], ["sep:Z", "cmb:Z", true],
+        ["gi:Geometry", "sc:Curves"],
+        ["sc:Tangent", "a2r:Primary Axis", true],
+        ["cmb:Vector", "rv:Vector", true], ["a2r:Rotation", "rv:Rotation", true],
+        ["sc:Position", "vm:Vector", true], ["rv:Vector", "vm:Vector#2", true],
+        ["vm:Vector", "setp:Position", true], ["real:Geometry", "setp:Geometry"],
+        ["setp:Geometry", "join:Geometry"], ["sl:Instances", "join:Geometry"],
+        ["join:Geometry", "go:Geometry"]
+      ]
+    }
+  };
+
+  var WIRE = { geo: "#00d6a3", float: "#a1a1a1", int: "#598c5c", vec: "#6363c7", rot: "#a663c7", bool: "#cca6d6", obj: "#ed9e5c" };
+  var SVGNS = "http://www.w3.org/2000/svg";
+
+  function h(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  function buildGraph(box, g) {
+    box.style.width = g.w + "px";
+    box.style.height = g.h + "px";
+    var svg = document.createElementNS(SVGNS, "svg");
+    box.appendChild(svg);
+    var sockets = {};
+
+    g.nodes.forEach(function (d) {
+      var id = d[0], cls = d[2];
+      var n = h("div", "bn " + (cls === "stub" ? "stub" : "c-" + cls));
+      n.style.left = d[3] + "px";
+      n.style.top = d[4] + "px";
+      n.style.width = d[5] + "px";
+      n.appendChild(h("div", "bh", d[1]));
+      var rows = h("div", "rows");
+      var seen = {};
+      d[6].forEach(function (r) {
+        var kind = r[0];
+        if (kind === "p") {
+          var row = h("div", "r prop");
+          // A pill row lists its options; the one at index r[3] (default 0) is on.
+          var opts = r.slice(1).filter(function (x) { return typeof x === "string"; });
+          var active = typeof r[r.length - 1] === "number" ? r[r.length - 1] : 0;
+          opts.forEach(function (o, k) { row.appendChild(h("span", "pill" + (k === active ? " on" : ""), o)); });
+          rows.appendChild(row);
+          return;
+        }
+        var name = r[1].replace(/#\d+$/, "");
+        var key = r[1];
+        var dir = kind === "o" ? "out" : "in";
+        var rowEl = h("div", "r " + dir);
+        var sk = h("i", "sk " + r[2]);
+        var lab = h("span", "lab", name);
+        if (dir === "out") { rowEl.appendChild(lab); rowEl.appendChild(sk); }
+        else {
+          rowEl.appendChild(sk); rowEl.appendChild(lab);
+          if (r[3]) rowEl.appendChild(h("span", "val", r[3]));
+        }
+        rows.appendChild(rowEl);
+        var skey = id + ":" + dir + ":" + key;
+        if (seen[skey]) skey += "#dup";
+        seen[skey] = true;
+        sockets[skey] = { el: sk, type: r[2] };
+      });
+      n.appendChild(rows);
+      box.appendChild(n);
+    });
+
+    function centre(el) {
+      var a = el.getBoundingClientRect(), b = box.getBoundingClientRect();
+      return { x: a.left - b.left + a.width / 2, y: a.top - b.top + a.height / 2 };
+    }
+
+    function draw() {
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      g.links.forEach(function (l) {
+        var f = l[0].split(":"), t = l[1].split(":");
+        var from = sockets[f[0] + ":out:" + f[1]];
+        var to = sockets[t[0] + ":in:" + t[1]];
+        if (!from || !to) { if (window.console) console.warn("missing socket", l); return; }
+        var p = centre(from.el), q = centre(to.el);
+        var dx = Math.max(40, Math.abs(q.x - p.x) * 0.5);
+        var path = document.createElementNS(SVGNS, "path");
+        path.setAttribute("d", "M" + p.x + " " + p.y + " C" + (p.x + dx) + " " + p.y + " " + (q.x - dx) + " " + q.y + " " + q.x + " " + q.y);
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke", WIRE[from.type] || "#aaa");
+        path.setAttribute("stroke-width", "2");
+        path.setAttribute("stroke-linecap", "round");
+        if (l[2]) path.setAttribute("stroke-dasharray", "6 5");
+        svg.appendChild(path);
+      });
+    }
+
+    return draw;
+  }
+
+  var drawers = [];
+  Array.prototype.forEach.call(document.querySelectorAll(".graph[data-graph]"), function (box) {
+    var g = GRAPHS[box.getAttribute("data-graph")];
+    if (g) drawers.push(buildGraph(box, g));
+  });
+  function redraw() { drawers.forEach(function (d) { d(); }); }
+  redraw();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(redraw);
+  window.addEventListener("resize", redraw);
+  window.addEventListener("load", redraw);
+
+  /* ---------------- filter ---------------- */
+
+  var q = document.getElementById("q");
+  var count = document.getElementById("count");
+  var sections = Array.prototype.slice.call(document.querySelectorAll("section[data-sec]"));
+  var parts = Array.prototype.slice.call(document.querySelectorAll(".part"));
+  var toc = document.getElementById("toc");
+
+  function apply() {
+    var term = q.value.trim().toLowerCase();
+    var shown = 0;
+    sections.forEach(function (sec) {
+      var rows = sec.querySelectorAll("[data-row]");
+      if (!rows.length) {
+        sec.hidden = !!term && sec.textContent.toLowerCase().indexOf(term) === -1;
+        return;
+      }
+      var any = false;
+      Array.prototype.forEach.call(rows, function (row) {
+        var hit = !term || row.textContent.toLowerCase().indexOf(term) !== -1;
+        row.hidden = !hit;
+        if (hit) { any = true; shown++; }
+      });
+      sec.hidden = !!term && !any;
+    });
+    parts.forEach(function (part) {
+      var id = part.getAttribute("data-part");
+      var mine = sections.filter(function (s) { return s.getAttribute("data-part") === id; });
+      part.hidden = mine.length > 0 && mine.every(function (s) { return s.hidden; });
+    });
+    toc.hidden = !!term;
+    count.textContent = term ? shown + " matching" : "";
+    if (!term) redraw();
+  }
+
+  q.addEventListener("input", apply);
+  q.addEventListener("keydown", function (e) { if (e.key === "Escape") { q.value = ""; apply(); } });
+})();
+</script>
+<script>
+(function(){
+  var order=["dark","light","system"];
+  var btn=document.getElementById("themeBtn");
+  if(!btn) return;
+  function read(){ try{ return localStorage.getItem("lab-theme")||"dark"; }catch(e){ return "dark"; } }
+  function apply(v){
+    if(v==="system") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme",v);
+    btn.textContent="Theme: "+v;
+    try{ localStorage.setItem("lab-theme",v); }catch(e){}
+  }
+  apply(read());
+  btn.addEventListener("click",function(){ apply(order[(order.indexOf(read())+1)%order.length]); });
+})();
+</script>
+</body>
+</html>
