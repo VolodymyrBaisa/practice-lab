@@ -17,7 +17,7 @@
       id: "blender",
       name: "Blender",
       href: "blender/index.html",
-      blurb: "Notes on how things were built in Blender, node by node — what each piece does, why it is there, and the mistakes that broke it on the way."
+      blurb: "Notes on how things were built in Blender, node by node — what each piece does, why it is there, and when to use it."
     },
     {
       id: "unreal",

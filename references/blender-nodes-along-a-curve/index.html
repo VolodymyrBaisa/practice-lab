@@ -196,10 +196,10 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;c
 .nd dd.warn{color:var(--ink)}
 @media (max-width:520px){.nd dl{grid-template-columns:1fr}.nd dt{padding-top:6px}}
 
-/* ---------- gotchas ---------- */
-.gotchas td:first-child{color:var(--ink);font-weight:500;min-width:13rem}
-.gotchas td:nth-child(2){min-width:15rem}
-.gotchas td:nth-child(3){min-width:15rem}
+/* ---------- Blender / Unreal table ---------- */
+.maptable td:first-child{color:var(--ink);font-weight:500;min-width:13rem}
+.maptable td:nth-child(2){min-width:15rem}
+.maptable td:nth-child(3){min-width:15rem}
 
 .note{font-size:13px;color:var(--muted);max-width:80ch}
 </style>
@@ -211,12 +211,12 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;c
     <p class="eyebrow">Blender &middot; Geometry Nodes reference</p>
     <h1>Geometry Nodes Along a Curve</h1>
     <div class="mast-rule"></div>
-    <p class="standfirst">A rail handcar has a chain loop, and it runs on a railway track. Both are Geometry Nodes sitting on a curve, yet the two node trees look nothing alike. One question explains the difference: <b>does the part stay rigid, or does it have to bend?</b> This page shows both trees, every node in them — what it does, why it is there, when to use it — and the mistakes that broke them on the way.</p>
+    <p class="standfirst">A rail handcar has a chain loop, and it runs on a railway track. Both are Geometry Nodes sitting on a curve, yet the two node trees look nothing alike. One question explains the difference: <b>does the part stay rigid, or does it have to bend?</b> This page shows both trees and every node in them — what it does, why it is there, and when to use it.</p>
   </header>
 
   <nav class="navbar" aria-label="Filter">
     <div class="searchrow">
-      <input id="q" type="search" placeholder="Filter nodes and fixes — try &quot;Sample Curve&quot;, &quot;rotation&quot;, &quot;cm&quot;" aria-label="Filter nodes and fixes">
+      <input id="q" type="search" placeholder="Filter nodes — try &quot;Sample Curve&quot;, &quot;rotation&quot;, &quot;cm&quot;" aria-label="Filter nodes">
       <span id="count"></span>
     </div>
   </nav>
@@ -241,8 +241,8 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;c
       </div>
       <div class="tocgroup">
         <p class="gn">Part 4</p><p class="gt">Look it up</p>
-        <p class="gd">Every node, every mistake, and the Unreal version.</p>
-        <ul><li><a href="#nodes">Node by node</a></li><li><a href="#gotchas">What went wrong, and the fix</a></li><li><a href="#unreal">Same idea in Unreal</a></li></ul>
+        <p class="gd">Every node, and the Unreal version.</p>
+        <ul><li><a href="#nodes">Node by node</a></li><li><a href="#unreal">Same idea in Unreal</a></li></ul>
       </div>
     </div>
   </div>
@@ -447,7 +447,7 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;c
   </section>
 
   <!-- ======================================================= PART 4 -->
-  <div class="part" data-part="4"><p class="pn">Part 4</p><p class="pt">Look it up</p><p class="pd">Every node in both trees, the mistakes met while building them, and how the same idea is built in Unreal.</p></div>
+  <div class="part" data-part="4"><p class="pn">Part 4</p><p class="pt">Look it up</p><p class="pd">Every node in both trees, and how the same idea is built in Unreal.</p></div>
 
   <section id="nodes" data-sec data-part="4">
     <div class="sec-head"><h2>Node by node</h2>
@@ -668,37 +668,11 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;c
     </div>
   </section>
 
-  <section id="gotchas" data-sec data-part="4">
-    <div class="sec-head"><h2>What went wrong, and the fix</h2>
-      <p class="sec-note">Every one of these happened while building the chain and the track. The symptom is what you see first.</p></div>
-    <div class="scroller">
-      <table class="gotchas">
-        <thead><tr><th>What you see</th><th>Why</th><th>Fix</th></tr></thead>
-        <tbody>
-          <tr data-row><td>Nothing from the tree appears</td><td>The modifier's monitor icon was switched off.</td><td>Turn the monitor icon on in the modifier header.</td></tr>
-          <tr data-row><td>All rail pieces stacked in one spot</td><td><code>0.4229</code> typed into a centimetre field became 0.42 cm.</td><td>Type <code>42.29</code> in length fields. Math nodes have no units.</td></tr>
-          <tr data-row><td>Chain links flew 3.4 m away</td><td>The link object's origin was at the world centre while its mesh sat on the draisine.</td><td>Object &rarr; Set Origin &rarr; Origin to Geometry on the links.</td></tr>
-          <tr data-row><td>Two link types sit on top of each other</td><td>Both were placed on the same points.</td><td>One list with Geometry to Instance, Pick Instance on, an even Count.</td></tr>
-          <tr data-row><td>Pins miss the holes on the sprocket, up to 4.4 mm</td><td>One link type was shifted half a step along a straight line, not along the curve.</td><td>Give every link its own point on the curve.</td></tr>
-          <tr data-row><td>Rails leave gaps on a turn — 84 cm on a 6 m turn</td><td>Rigid copies cannot bend.</td><td>Build a straight strip and bend it with Set Position.</td></tr>
-          <tr data-row><td>Rails squeeze together on the turn</td><td>The side offset still pointed along world axes.</td><td>Rotate Vector, with Axes to Rotation from the sampled tangent.</td></tr>
-          <tr data-row><td>Rails 60 cm off the path</td><td>The curve's Normal was used as "up", and on RailPath it does not point up.</td><td>Secondary Axis (0, 0, 1) in Axes to Rotation.</td></tr>
-          <tr data-row><td>Links missing, "dependency cycle" warning</td><td>The link objects still had Array and Curve modifiers pointing at the path — disabled ones count too.</td><td>Delete those modifiers from the source objects.</td></tr>
-          <tr data-row><td>Wire in the wrong socket (Y into Length)</td><td>Dragged from the wrong output dot.</td><td>Drag from X onto Length. An input that takes one wire replaces the old one.</td></tr>
-          <tr data-row><td>Pins off by up to 1.7 mm</td><td>Curve Resolution 12 is coarse for 14 mm links.</td><td>Resolution Preview U 32 on the path.</td></tr>
-          <tr data-row><td>Track stretched up to 2.4&times; on turns (Curve modifier)</td><td>The mesh object sat 7 m away from the path's origin, so it bent around a wider circle.</td><td>Same Location and Rotation for both — or build it with nodes as here.</td></tr>
-          <tr data-row><td>Sleepers wedge-shaped on turns (Curve modifier)</td><td>The modifier bends every vertex, sleepers included.</td><td>Place sleepers as instances instead.</td></tr>
-          <tr data-row><td>No "Fit Curve" option on the Array modifier</td><td>In Blender 5.2, Add Modifier &rarr; Array is the node version; the old one is "Array (Legacy)".</td><td>Use Array (Legacy) for Fit Curve, or nodes.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
   <section id="unreal" data-sec data-part="4">
     <div class="sec-head"><h2>Same idea in Unreal</h2>
       <p class="sec-note">The rigid-or-bending question carries over unchanged. Only the names differ.</p></div>
     <div class="scroller">
-      <table class="gotchas">
+      <table class="maptable">
         <thead><tr><th>In Blender</th><th>In Unreal</th><th>How</th></tr></thead>
         <tbody>
           <tr data-row><td>The curve (ChainPath, RailPath)</td><td>Spline Component</td><td>You shape it in the level viewport.</td></tr>

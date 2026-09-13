@@ -51,7 +51,7 @@ window.REFERENCES = [
     "id": "blender-nodes-along-a-curve",
     "menu": "Nodes along a curve",
     "title": "Geometry Nodes Along a Curve",
-    "summary": "A chain loop and a railway track, both built with Geometry Nodes on a curve. Why one tree copies rigid pieces and the other bends a rail, both trees drawn node by node, step-by-step recipes with checkpoints, every node explained — what it does, why it is there, when to use it — and the mistakes that broke it on the way.",
+    "summary": "A chain loop and a railway track, both built with Geometry Nodes on a curve. Why one tree copies rigid pieces and the other bends a rail, both trees drawn node by node, step-by-step recipes with checkpoints, and every node explained — what it does, why it is there, and when to use it.",
     "why": "Look-up material, not a drill. Two trees that both put things on a curve look nothing alike, and copying the wrong one leaves gaps on every turn. This is the page to open before building the next one alone.",
     "topics": [
       "blender",
